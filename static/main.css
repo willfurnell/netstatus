@@ -1,0 +1,55 @@
+.center {
+	margin-left: auto;
+	margin-right: auto;
+}
+
+.header {
+    text-align: center;
+    background-color: #800040;
+    height: 40px;
+    font-family: Arial, sans-serif;
+    color: white;
+    position: absolute;
+    top: -5px;
+    width: 100%;
+    right: 0;
+    left: 0;
+    padding-bottom: 10px;
+}
+
+.main {
+    position: absolute;
+    top: 60px;
+    font-family: Arial, sans-serif;
+    padding-left: 20px;
+    padding-right: 20px;
+    padding-bottom: 20px;
+}
+
+.ns-head {
+    font-size: 20px;
+    float: left;
+    padding-left: 20px;
+    padding-top: -10px;
+}
+
+.ns-menu{
+    list-style-type: none;
+    margin: 0;
+    padding: 10px;
+    padding-top: 20px;
+}
+
+.ns-menu-item {
+    display: inline;
+    padding-left: 10px;
+	padding-right: 10px;
+}
+
+.ns-menu-item a {
+    color: gold;
+}
+
+.ns-menu-item a:visited {
+    color: gold;
+}
