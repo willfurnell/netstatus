@@ -24,5 +24,6 @@ urlpatterns = [
     url(r'^get_device_info/', views.get_device_info, name='get_device_info'),
     url(r'^device-list/', views.device_list, name='device-list'),
     url(r'^new-device/', views.new_device, name='new-device'),
-    url(r'^remove-device/', views.remove_device, name='remove-device')
+    url(r'^remove-device/', views.remove_device, name='remove-device'),
+    url(r'^piechart-online', views.piechart_online, name='piechart-online')
 ]

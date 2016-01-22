@@ -6,7 +6,7 @@
 .header {
     text-align: center;
     background-color: #800040;
-    height: 40px;
+    height: 45px;
     font-family: Arial, sans-serif;
     color: white;
     position: absolute;
@@ -36,8 +36,8 @@
 .ns-menu{
     list-style-type: none;
     margin: 0;
-    padding: 10px;
     padding-top: 20px;
+    padding-left:-10px;
 }
 
 .ns-menu-item {
@@ -53,3 +53,7 @@
 .ns-menu-item a:visited {
     color: gold;
 }
+
+/*#piechart {
+    background-image: url("/piechart-online");
+}*/

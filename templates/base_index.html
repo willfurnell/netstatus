@@ -4,6 +4,32 @@
 
 {% block content %}
 
+    {% load staticfiles %}
+
     <p>Welcome to the NetStatus dashboard. Please see the graphs below for the current status of the network.</p>
+
+    <!-- <img src="data:image/png;base64,{{ graph_image }}"> -->
+
+    <img id="piechart" src="/piechart-online" width="550px" height="400px">
+
+    <img id="" src="{% static "loading.gif" %}">
+
+
+    <script type="application/javascript">
+
+
+        /*function loadPiechart() {
+            /*var piechart = new Image();
+
+            piechart.src = "/piechart-online";
+
+            piechart.onload = function() {
+
+            }*//*
+        document.getElementById("piechart").src = "/piechart-online";
+    }*/
+
+
+    </script>
 
 {% endblock %}
