@@ -9,6 +9,7 @@ from netstatus.settings import BASE_DIR
 from .utils import ping, setup_snmp_session, timeticks_to_days
 
 
+
 def main(request):
     """
     Returns the front page of the website.
@@ -87,7 +88,9 @@ def get_device_info(request):
     Sample testing page for getting information via SNMP from a device.
     """
 
-    ip = '10.49.86.241'
+    ip = '10.49.85.64'
+
+    ip2 = '10.49.86.241'
 
     if not ping(ip):
         pagevars = {'title': 'Connection to device failed', 'info': 'Error, connection to the device specified failed. '
@@ -95,18 +98,37 @@ def get_device_info(request):
                                                                     'requests.'}
         return render(request, "base_get_device_info.html", pagevars)
 
+    """
+    sysdescr = session.get('sysDescr')
+    uptime = session.get('sysUpTimeInstance')
+    contact = session.get('sysContact')
+    name = session.get('sysName')
+    location = session.get('sysLocation')
+
+    system_information = {}
+
+    system_information['description'] = sysdescr
+    system_information['uptime'] = uptime
+    """
+
     session = setup_snmp_session(ip)
 
     system_items = session.walk('system')
 
-    attributes = []
+    system_information = {}
 
-    for item in system_items:
-        attributes.append(item.value)
+    for i in system_items:
+        if i.oid != 'sysUpTimeInstance':
+            system_information[i.oid] = i.value
+        else:
+            system_information[i.oid] = int(timeticks_to_days(int(i.value)))
 
-    print(attributes)
+    log_items = session.walk('mib-2.16.9.2.1.4')
 
-    # info = timeticks_to_days(int(uptime.value))
 
-    pagevars = {'title': "device info",}
-    return render(request, "base_get_device_info.html", pagevars)
+
+    print(log_items)
+
+    pagevars = {'title': "device info", 'system_information': system_information, 'log_items': log_items}
+
+    return render(request, "base_device_info.html", pagevars)
