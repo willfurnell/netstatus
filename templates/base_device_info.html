@@ -19,8 +19,8 @@
     <p>Log of system errors</p>
 
     <ul>
-        {% for item in log_items %}
-            <li>{{ item.value }}</li>
+        {% for item in log_items_strings %}
+            <li>{{ item }}</li>
         {% endfor %}
     </ul>
 

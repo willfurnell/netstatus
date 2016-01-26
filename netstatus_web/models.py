@@ -1,15 +1,16 @@
 from django.db import models
+from django.core.validators import RegexValidator
 
 # Create your models here.
 
 
-class System:
+class MACAddressField(models.CharField):
+    __metaclass__ = models.SubfieldBase
 
-    def __init__(self, ip):
-        self.ip = ip
 
-    def description(self, ip):
 
-        return description
-
-    self.ip = ip
+class Switch(models.Model):
+    name = models.CharField(max_length=255)
+    ip_address = models.GenericIPAddressField()
+    mac_address = models.CharField(validators=RegexValidator())
+    location = models.CharField(max_length=255)

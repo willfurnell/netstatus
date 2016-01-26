@@ -88,28 +88,15 @@ def get_device_info(request):
     Sample testing page for getting information via SNMP from a device.
     """
 
-    ip = '10.49.85.64'
+    ip2 = '10.49.85.64'
 
-    ip2 = '10.49.86.241'
+    ip = '10.49.86.241'
 
     if not ping(ip):
         pagevars = {'title': 'Connection to device failed', 'info': 'Error, connection to the device specified failed. '
                                                                     'The device may be offline, or not accepting SNMP '
                                                                     'requests.'}
         return render(request, "base_get_device_info.html", pagevars)
-
-    """
-    sysdescr = session.get('sysDescr')
-    uptime = session.get('sysUpTimeInstance')
-    contact = session.get('sysContact')
-    name = session.get('sysName')
-    location = session.get('sysLocation')
-
-    system_information = {}
-
-    system_information['description'] = sysdescr
-    system_information['uptime'] = uptime
-    """
 
     session = setup_snmp_session(ip)
 
@@ -125,10 +112,14 @@ def get_device_info(request):
 
     log_items = session.walk('mib-2.16.9.2.1.4')
 
+    log_items_strings = []
 
+    for item in log_items:
+        if not(item.value.startswith('W')):
+            pass
+        else:
+            log_items_strings.append(item.value)
 
-    print(log_items)
-
-    pagevars = {'title': "device info", 'system_information': system_information, 'log_items': log_items}
+    pagevars = {'title': "device info", 'system_information': system_information, 'log_items_strings': log_items_strings}
 
     return render(request, "base_device_info.html", pagevars)
