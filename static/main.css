@@ -62,3 +62,9 @@
     margin-left: 20%;
     margin-right: 20%;
 }
+
+.error {
+    color: red;
+    border:1px red;
+    padding: 3px;
+}

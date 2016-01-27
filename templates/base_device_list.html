@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+
+    {% load staticfiles %}
+
+
+
+    {% for device in set_of_devices %}
+        {{ device.name }}<br />
+    {% endfor %}
+
+    <div class="pagination">
+        <span class="step-links">
+            {% if set_of_devices.has_previous %}
+                <a href="?page={{ set_of_devices.previous_page_number }}">Previous</a>
+            {% endif %}
+
+            <span class="current">
+                Page {{ set_of_devices.number }} of {{ set_of_devices.paginator.num_pages }}.
+            </span>
+
+            {% if contacts.has_next %}
+                <a href="?page={{ set_of_devices.next_page_number }}">Next</a>
+            {% endif %}
+        </span>
+    </div>
+
+{% endblock %}

@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+
+    {% load staticfiles %}
+
+    <p>New device successfully added to NetStatus!</p>
+    <p><a href="{% url 'main' %}">Return to the dashboard</a><br />
+    <a href="{% url 'new-device' %}">Add another device</a></p>
+
+{% endblock %}
