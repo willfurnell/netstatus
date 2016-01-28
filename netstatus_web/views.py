@@ -31,16 +31,23 @@ def piechart_online(request):
     Returns a PNG image of the chart (which is never stored on disk - only in memory).
     """
 
-    devlist = ['10.49.86.241', '10.49.84.1', '10.49.84.108', '10.49.87.17']
+    # Queries the database to get all the device rows
+    devlist = Device.objects.all()
 
     online = 0
     offline = 0
 
+    # Checks if every device in the list is online or offline by using the 'ping' funtion. A total of online/offline
+    # devices is created and each individual device's status is updated in the database.
     for device in devlist:
-        if ping(device):
+        if ping(device.ipv4_address):
             online = online + 1
+            device.online = True
+            device.save()
         else:
             offline = offline + 1
+            device.online = False
+            device.save()
 
     labels = 'Offline', 'Online'
 
@@ -48,8 +55,9 @@ def piechart_online(request):
 
     colors = ['red', 'green']
 
+    # This plots a pie chart - the autopct lambda function is used to reformat the percentage back into raw values.
     plt.pie(sizes, labels=labels, colors=colors,
-        autopct='%1.1f%%', shadow=True, startangle=90)
+        autopct=lambda f: '{:.0f}'.format(f * sum(sizes) / 100), shadow=False, startangle=90)
     # Set aspect ratio to be equal so that pie is drawn as a circle.
     plt.axis('equal')
 
@@ -72,9 +80,9 @@ def device_list(request):
     Gets data from backend database.
     """
 
-    all_devices = Device.objects.all()
+    devlist = Device.objects.all()
 
-    paginator = Paginator(all_devices, 25) # Show 25 devices per page
+    paginator = Paginator(devlist, 50) # Show 50 devices per page
 
     page = request.GET.get('page')
     try:
@@ -105,6 +113,7 @@ def new_device(request):
         if form.is_valid():
 
             if not ping(form.cleaned_data['ipv4_address']):
+
                 # If the server cannot contact the device that the user has been specified, then let the user know
                 # and do not let them add the device.
                 return render(request, 'base_new_device.html', {'title': "NetStatus New Device",
@@ -117,10 +126,11 @@ def new_device(request):
             session = setup_snmp_session(form.cleaned_data['ipv4_address'])
 
             description = session.get('sysDescr')
+
             online = True  # We know this because we just 'pinged' the device
 
             device = Device(name=form.cleaned_data['name'], ipv4_address=form.cleaned_data['ipv4_address'],
-                                location=form.cleaned_data['location'], description=description, online=online)
+                                location=form.cleaned_data['location'], online=online, system_version=description)
 
             device.save()
 
@@ -151,14 +161,14 @@ def remove_device(request):
     return render(request, 'base_index.html', pagevars)
 
 
-def get_device_info(request):
+def device_info(request, id):
     """
     Sample testing page for getting information via SNMP from a device.
     """
 
-    ip2 = '10.49.85.64'
+    device = Device.objects.get(pk=id)
 
-    ip = '10.49.86.241'
+    ip = device.ipv4_address
 
     if not ping(ip):
         pagevars = {'title': 'Connection to device failed', 'info': 'Error, connection to the device specified failed. '

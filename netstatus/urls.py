@@ -21,10 +21,10 @@ from netstatus_web import views
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^$', views.main, name='main'),
-    url(r'^get_device_info/$', views.get_device_info, name='get_device_info'),
     url(r'^device/list/$', views.device_list, name='device-list'),
     url(r'^device/new$', views.new_device, name='new-device'),
     url(r'^device/new/success$', views.new_device_success, name='new-device_success'),
     url(r'^device/remove$', views.remove_device, name='remove-device'),
+    url(r'^device/info/(?P<id>[0-9]+)$', views.device_info, name='device_info'),
     url(r'^piechart-online$', views.piechart_online, name='piechart-online')
 ]

@@ -14,7 +14,7 @@ def ping(ip):
      For my purposes, if a device does not establish an SNNP session, I can assume it is offline.
     """
     try:
-        # The low timeout value is to increase page loading time, as this is mainly for quickly checking
+        # The low timeout value is to decrease page loading time, as this is mainly for quickly checking
         # device status. We don't NEED to make a connection.
         session = Session(hostname=ip, community='***REMOVED***', version=2, timeout=0.1)
     except (exceptions.EasySNMPTimeoutError, exceptions.EasySNMPConnectionError):

@@ -68,3 +68,23 @@
     border:1px red;
     padding: 3px;
 }
+
+.text-online {
+    color: white;
+    background-color: green;
+    border-radius: 2px;
+    padding-left: 2px;
+    padding-right: 2px;
+}
+
+.text-offline {
+    color: white;
+    background-color: red;
+    border-radius: 2px;
+    padding-left: 2px;
+    padding-right: 2px;
+}
+
+.devicelisting li {
+    padding: 2px;
+}

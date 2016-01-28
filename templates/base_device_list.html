@@ -6,11 +6,18 @@
 
     {% load staticfiles %}
 
+    <p>NetStatus Device Listing</p>
 
-
+    <div class="devicelisting">
+    <ul>
     {% for device in set_of_devices %}
-        {{ device.name }}<br />
+        <li><a href="{% url 'device_info' device.id %}"><strong>{{ device.name }}</strong></a>. Last checked to be
+            {% if device.online == True %}<span class="text-online">Online</span>{% else %}<span class="text-offline">Offline</span>{% endif %}</li>
     {% endfor %}
+    </ul>
+    </div>
+
+
 
     <div class="pagination">
         <span class="step-links">
@@ -27,5 +34,6 @@
             {% endif %}
         </span>
     </div>
+
 
 {% endblock %}
