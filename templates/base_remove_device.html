@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+
+    {% load staticfiles %}
+
+    <p>Add a new device</p>
+
+    {% if form.errors %}
+    {% for field in form %}
+        {% for error in field.errors %}
+            <div class="error">
+                <strong>{{ error|escape }}</strong>
+            </div>
+        {% endfor %}
+    {% endfor %}
+    {% for error in form.non_field_errors %}
+        <div class="error">
+            <strong>{{ error|escape }}</strong>
+        </div>
+    {% endfor %}
+    {% endif %}
+
+    {% if error %}
+        <p class="error">{{ error }}</p>
+    {% endif %}
+
+    <form class="remove-device" action="{% url 'remove-device' %}" method="post" enctype="multipart/form-data">
+        {%  csrf_token %}
+        {{ form }}
+        <input type="submit" value="Remove device (this cannot be undone)">
+    </form>
+
+{% endblock %}

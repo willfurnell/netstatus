@@ -11,3 +11,6 @@ class Device(models.Model):
     location = models.CharField(max_length=255)
     online = models.BooleanField()
     system_version = models.CharField(max_length=999)
+
+    def __str__(self):
+        return '{0}'.format(self.name)

@@ -14,3 +14,7 @@ class EditDeviceForm(forms.Form):
         model = Device
 
         fields = ('name', 'ipv4_address', 'location')
+
+
+class RemoveDeviceForm(forms.Form):
+    choose_device = forms.ModelChoiceField(queryset=Device.objects.all(), label="Choose a device")

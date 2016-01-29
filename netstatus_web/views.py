@@ -7,7 +7,7 @@ import io
 # import base64
 from netstatus.settings import BASE_DIR
 from .utils import ping, setup_snmp_session, timeticks_to_days
-from .forms import NewDeviceForm
+from .forms import NewDeviceForm, RemoveDeviceForm
 from .models import Device
 from django.core.urlresolvers import reverse
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
@@ -82,7 +82,7 @@ def device_list(request):
 
     devlist = Device.objects.all()
 
-    paginator = Paginator(devlist, 50) # Show 50 devices per page
+    paginator = Paginator(devlist, 50)  # Show 50 devices per page
 
     page = request.GET.get('page')
     try:
@@ -93,7 +93,6 @@ def device_list(request):
     except EmptyPage:
         # If page is out of range (e.g. 9999), deliver last page of results.
         set_of_devices = paginator.page(paginator.num_pages)
-
 
     pagevars = {'title': "NetStatus Device List", 'set_of_devices': set_of_devices}
 
@@ -157,8 +156,29 @@ def remove_device(request):
     A page for removing devices from the database. Could be used for missentered devices, or devices that are no longer
     in use.
     """
-    pagevars = {'title': "NetStatus Remove Device"}
-    return render(request, 'base_index.html', pagevars)
+
+        # Only go if user submits a form
+    if request.method == 'POST':
+        # create a form instance and populate it with data from the request:
+        form = RemoveDeviceForm(request.POST)
+
+        if form.is_valid():
+
+            id = form.cleaned_data['choose_device'].id
+
+            device = Device.objects.get(pk=id)
+
+            device.delete()
+
+            return HttpResponseRedirect(reverse('remove-device'))
+
+    # if a GET (or any other method) we'll create a blank form
+    else:
+        form = RemoveDeviceForm()
+
+
+    pagevars = {'title': "NetStatus Remove Device", 'form': form.as_p()}
+    return render(request, 'base_remove_device.html', pagevars)
 
 
 def device_info(request, id):
