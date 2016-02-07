@@ -11,7 +11,7 @@
     <div class="devicelisting">
     <ul>
     {% for device in set_of_devices %}
-        <li><a href="{% url 'device_info' device.id %}"><strong>{{ device.name }}</strong></a>. Last checked to be
+        <li><a href="{% url 'device_info' device.id %}"><strong>{{ device.name }}</strong></a>, {{ device.ipv4_address }}, {{ device.location }}. Last checked to be
             {% if device.online == True %}<span class="text-online">Online</span>{% else %}<span class="text-offline">Offline</span>{% endif %}</li>
     {% endfor %}
     </ul>

@@ -13,7 +13,6 @@ from django.core.urlresolvers import reverse
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 
-
 def main(request):
     """
     Returns the front page of the website.
@@ -141,6 +140,11 @@ def new_device(request):
 
     pagevars = {'title': "NetStatus New Device", 'form': form.as_p()}
     return render(request, 'base_new_device.html', pagevars)
+
+
+def show_map(request):
+
+    return render(request, "base_map.html")
 
 
 def new_device_success(request):

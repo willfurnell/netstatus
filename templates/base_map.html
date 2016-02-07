@@ -6,34 +6,36 @@
 
     {% load staticfiles %}
 
-    <p>NetStatus Device Listing</p>
+    <p>NetStatus Device Map</p>
 
-    <div class="devicelisting">
-    <ul>
-    {% for device in set_of_devices %}
-        <li><a href="{% url 'device_info' device.id %}"><strong>{{ device.name }}</strong></a>, {{ device.ipv4_address }}, {{ device.location }}. Last checked to be
-            {% if device.online == True %}<span class="text-online">Online</span>{% else %}<span class="text-offline">Offline</span>{% endif %}</li>
-    {% endfor %}
-    </ul>
+    <div style="position: relative; left: 0; top: 0;">
+        <img src="{% static "buildings-plan-2011.jpg" %}" width="800px" height="600px" alt="School Map" id="map" style="position: relative; top: 0; left: 0;">
+        <img src="{% static "ethernet_port_neutral.png" %}" width="10px" height="10px" style="position: absolute; top: 400px; left: 75px;" id="eth">
     </div>
 
 
+    <script>
 
-    <div class="pagination">
-        <span class="step-links">
-            {% if set_of_devices.has_previous %}
-                <a href="?page={{ set_of_devices.previous_page_number }}">Previous</a>
-            {% endif %}
+        // Sets up map object based on div ID
+        var map = document.querySelector("#map");
+        var ethernet_port = document.querySelector("#eth");
 
-            <span class="current">
-                Page {{ set_of_devices.number }} of {{ set_of_devices.paginator.num_pages }}.
-            </span>
+        // Sets up event handler for when the map is clicked
+        map.addEventListener("click", getClick, false);
 
-            {% if contacts.has_next %}
-                <a href="?page={{ set_of_devices.next_page_number }}">Next</a>
-            {% endif %}
-        </span>
-    </div>
 
+        // When the user clicks on the map...
+        function getClick(event) {
+            // Get the rectangle that encompasses our map div. This allows us to get relative x,y co-ordinates
+            // for the user click, allowing them to be replicated in any browser when showing the location back
+            // This makes it easy to store in our database too!
+            var rect = map.getBoundingClientRect();
+            var x = event.clientX - rect.left;
+            var y = event.clientY - rect.top;
+            ethernet_port.style.top = y + "px";
+            ethernet_port.style.left = x + "px";
+        }
+
+    </script>
 
 {% endblock %}
