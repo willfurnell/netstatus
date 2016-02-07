@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+
+    {% load staticfiles %}
+
+    <p>NetStatus Device Listing</p>
+
+    <div class="devicelisting">
+    <ul>
+    {% for device in set_of_devices %}
+        <li><a href="{% url 'device_info' device.id %}"><strong>{{ device.name }}</strong></a>, {{ device.ipv4_address }}, {{ device.location }}. Last checked to be
+            {% if device.online == True %}<span class="text-online">Online</span>{% else %}<span class="text-offline">Offline</span>{% endif %}</li>
+    {% endfor %}
+    </ul>
+    </div>
+
+
+
+    <div class="pagination">
+        <span class="step-links">
+            {% if set_of_devices.has_previous %}
+                <a href="?page={{ set_of_devices.previous_page_number }}">Previous</a>
+            {% endif %}
+
+            <span class="current">
+                Page {{ set_of_devices.number }} of {{ set_of_devices.paginator.num_pages }}.
+            </span>
+
+            {% if contacts.has_next %}
+                <a href="?page={{ set_of_devices.next_page_number }}">Next</a>
+            {% endif %}
+        </span>
+    </div>
+
+
+{% endblock %}
