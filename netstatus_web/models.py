@@ -8,7 +8,8 @@ class Device(models.Model):
     name = models.CharField(max_length=255)
     ipv4_address = models.GenericIPAddressField()
     #mac_address = models.CharField(validators=[RegexValidator(regex='^([a-fA-F0-9]{2}:){5}([a-fA-F0-9]{2})$')], max_length=17)
-    location = models.CharField(max_length=255)
+    location_x = models.DecimalField(decimal_places=20, max_digits=100)
+    location_y = models.DecimalField(decimal_places=20, max_digits=100)
     online = models.BooleanField()
     system_version = models.CharField(max_length=999)
 

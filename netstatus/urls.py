@@ -27,5 +27,5 @@ urlpatterns = [
     url(r'^device/remove$', views.remove_device, name='remove-device'),
     url(r'^device/info/(?P<id>[0-9]+)$', views.device_info, name='device_info'),
     url(r'^piechart-online$', views.piechart_online, name='piechart-online'),
-    url(r'^device/new/location$', views.show_map, name='new-device_location')
+    url(r'^device/new/location$', views.new_device_location, name='new-device_location')
 ]

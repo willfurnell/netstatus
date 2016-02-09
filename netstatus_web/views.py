@@ -11,6 +11,7 @@ from .forms import NewDeviceForm, RemoveDeviceForm
 from .models import Device
 from django.core.urlresolvers import reverse
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from numbers import Number
 
 
 def main(request):
@@ -79,19 +80,7 @@ def device_list(request):
     Gets data from backend database.
     """
 
-    devlist = Device.objects.all()
-
-    paginator = Paginator(devlist, 50)  # Show 50 devices per page
-
-    page = request.GET.get('page')
-    try:
-         set_of_devices = paginator.page(page)
-    except PageNotAnInteger:
-        # If page is not an integer, deliver first page.
-        set_of_devices = paginator.page(1)
-    except EmptyPage:
-        # If page is out of range (e.g. 9999), deliver last page of results.
-        set_of_devices = paginator.page(paginator.num_pages)
+    set_of_devices = Device.objects.all()
 
     pagevars = {'title': "NetStatus Device List", 'set_of_devices': set_of_devices}
 
@@ -108,6 +97,7 @@ def new_device(request):
         # create a form instance and populate it with data from the request:
         form = NewDeviceForm(request.POST)
 
+        # Checks if x and y are actually numbers, in case the user has played with the Javascript
         if form.is_valid():
 
             if not ping(form.cleaned_data['ipv4_address']):
@@ -128,7 +118,8 @@ def new_device(request):
             online = True  # We know this because we just 'pinged' the device
 
             device = Device(name=form.cleaned_data['name'], ipv4_address=form.cleaned_data['ipv4_address'],
-                                location=form.cleaned_data['location'], online=online, system_version=description)
+                            location_x=form.cleaned_data['location_x'], location_y=form.cleaned_data['location_y'],
+                            online=online, system_version=description)
 
             device.save()
 
@@ -142,9 +133,11 @@ def new_device(request):
     return render(request, 'base_new_device.html', pagevars)
 
 
-def show_map(request):
+def new_device_location(request):
 
-    return render(request, "base_map.html")
+    # There is very little Python here as most of the map logic is done in Javascript.
+
+    return render(request, "base_new_device_location.html")
 
 
 def new_device_success(request):

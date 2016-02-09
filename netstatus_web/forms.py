@@ -5,7 +5,8 @@ from .models import Device
 class NewDeviceForm(forms.Form):
     name = forms.CharField(max_length=255, label="Device Name")
     ipv4_address = forms.GenericIPAddressField(label="Device IPv4 Address")
-    location = forms.CharField(max_length=255, label="Device Location")
+    location_x = forms.DecimalField(max_digits=100, decimal_places=20, widget=forms.HiddenInput(), initial=0)
+    location_y = forms.DecimalField(max_digits=100, decimal_places=20, widget=forms.HiddenInput(), initial=0)
 
 
 class EditDeviceForm(forms.Form):
@@ -13,7 +14,7 @@ class EditDeviceForm(forms.Form):
 
         model = Device
 
-        fields = ('name', 'ipv4_address', 'location')
+        fields = ('name', 'ipv4_address')
 
 
 class RemoveDeviceForm(forms.Form):

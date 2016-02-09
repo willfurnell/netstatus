@@ -6,8 +6,6 @@
 
     {% load staticfiles %}
 
-    <p>Add a new device</p>
-
     <p>Choose the location of the device on the school map</p>
 
     <div style="position: relative; left: 0; top: 0;">
@@ -15,54 +13,25 @@
         <img src="{% static "ethernet_port_neutral.png" %}" width="10px" height="10px" style="position: absolute; top: 0; left: 0;" id="eth">
     </div>
 
-
-    <p>Please add device name and IP address</p>
-
-    {% if form.errors %}
-    {% for field in form %}
-        {% for error in field.errors %}
-            <div class="error">
-                <strong>{{ error|escape }}</strong>
-            </div>
-        {% endfor %}
-    {% endfor %}
-    {% for error in form.non_field_errors %}
-        <div class="error">
-            <strong>{{ error|escape }}</strong>
-        </div>
-    {% endfor %}
-    {% endif %}
-
-    {% if error %}
-        <p class="error">{{ error }}</p>
-    {% endif %}
-
-    <form class="upload" action="{% url 'new-device' %}" method="post" enctype="multipart/form-data">
-        {%  csrf_token %}
-        {{ form }}
-        <input type="submit" value="Add a new device">
-    </form>
+    <input type="submit" value="Proceed to add a new device >>" onclick="proceedToNextStage()">
 
 
-        <script>
+    <script>
 
-        // Sets up objects based on HTML id's
+        // Sets up map object based on img ID
         var map = document.querySelector("#map");
         var ethernet_port = document.querySelector("#eth");
-        var input_x = document.querySelector("#id_location_x");
-        var input_y = document.querySelector("#id_location_y");
-
 
         // Sets up event handler for when the map is clicked
         map.addEventListener("click", getClick, false);
 
+        // Have to declare these globally so I can use them in both the getClick function and the proceedToNextStage
+        // function.
+        var x = 0;
+        var y = 0;
 
         // When the user clicks on the map...
         function getClick(event) {
-
-            var x = 0;
-            var y = 0;
-
             // Get the rectangle that encompasses our map img. This allows us to get relative x,y co-ordinates
             // for the user click, allowing them to be replicated in any browser when showing the location back
             // This makes it easy to store in our database too!
@@ -72,14 +41,14 @@
             // Show the user where they placed the device
             ethernet_port.style.left = x + "px";
             ethernet_port.style.top = y + "px";
-
-            input_x.value = x;
-            input_y.value = y;
-
-            console.log(input_x.value);
-            console.log(input_y.value);
         }
 
-        </script>
+        function proceedToNextStage() {
+            console.log(x);
+            console.log(y);
+            window.location.assign("{% url 'new-device' %}" + "?x=" + x + "&y=" + y);
+        }
+
+    </script>
 
 {% endblock %}
