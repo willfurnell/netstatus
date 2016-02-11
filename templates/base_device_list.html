@@ -8,19 +8,38 @@
 
     <p>NetStatus Device Listing</p>
 
-    <div class="devicelisting">
-    <ul>
-
-    </ul>
-    </div>
-
         <div style="position: relative; left: 0; top: 0;">
         <img src="{% static "buildings_plan_2011.jpg" %}" width="850px" height="600px" alt="School Map" id="map" style="position: relative; top: 0; left: 0;">
             {% for device in set_of_devices %}
-                <img src="{% static "ethernet_port_neutral.png" %}" width="10px" height="10px" style="position: absolute; top: {{ device.location_y }}px; left: {{ device.location_x }}px;" id="eth">
+                    <a href="#" onclick="deviceInfoPopup({{ device.id }})">
+                        {% if device.online == 1 %}
+                            <img src="{% static "ethernet_port_green.png" %}" width="10px" height="10px" style="position: absolute; top: {{ device.location_y }}px; left: {{ device.location_x }}px;" id="eth">
+                        {% else %}
+                            <img src="{% static "ethernet_port_red.png" %}" width="10px" height="10px" style="position: absolute; top: {{ device.location_y }}px; left: {{ device.location_x }}px;" id="eth">
+                        {% endif %}
+                    </a>
+                        <div class="popup" id="popup-{{ device.id }}">
+                        <div class="popup-content">
+                            <p>{{ device.name }}. Last checked to be {% if device.online == True %}<span class="text-online">Online</span>{% else %}<span class="text-offline">Offline</span>{% endif %}. IPv4 address: {{ device.ipv4_address }}.<br /><a href="{% url 'device_info' device.id %}">More information.</a></p>
+                                <p style="font-size: 10px;"><a href="#" onclick="deviceInfoPopup({{ device.id }})">close window</a></p>
+                        </div>
+                        </div>
             {% endfor %}
     </div>
 
+    <script>
 
+    function deviceInfoPopup(id) {
+        var popup = document.getElementById("popup-" + id);
+
+        if (popup.style.visibility == "visible") {
+            popup.style.visibility = "hidden";
+        } else {
+            popup.style.visibility = "visible";
+        }
+
+    }
+
+    </script>
 
 {% endblock %}

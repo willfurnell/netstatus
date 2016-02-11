@@ -1,17 +1,10 @@
 from django.shortcuts import render, Http404, HttpResponse, HttpResponseRedirect
-# from easysnmp import Session
-# from easysnmp import exceptions
-# import os
 import matplotlib.pyplot as plt
 import io
-# import base64
-from netstatus.settings import BASE_DIR
 from .utils import ping, setup_snmp_session, timeticks_to_days
 from .forms import NewDeviceForm, RemoveDeviceForm
 from .models import Device
 from django.core.urlresolvers import reverse
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from numbers import Number
 
 
 def main(request):
