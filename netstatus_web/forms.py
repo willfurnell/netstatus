@@ -14,7 +14,7 @@ class EditDeviceForm(forms.Form):
 
         model = Device
 
-        fields = ('name', 'ipv4_address')
+        fields = ('name', 'ipv4_address', 'location_x', 'location_y')
 
 
 class RemoveDeviceForm(forms.Form):

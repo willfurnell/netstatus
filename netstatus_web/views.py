@@ -2,7 +2,7 @@ from django.shortcuts import render, Http404, HttpResponse, HttpResponseRedirect
 import matplotlib.pyplot as plt
 import io
 from .utils import ping, setup_snmp_session, timeticks_to_days
-from .forms import NewDeviceForm, RemoveDeviceForm
+from .forms import NewDeviceForm, RemoveDeviceForm, EditDeviceForm
 from .models import Device
 from django.core.urlresolvers import reverse
 
@@ -80,7 +80,7 @@ def device_list(request):
     return render(request, 'base_device_list.html', pagevars)
 
 
-def new_device(request):
+def device_new(request):
     """
     A page for creating a new entry in the database for a new device
     """
@@ -97,7 +97,7 @@ def new_device(request):
 
                 # If the server cannot contact the device that the user has been specified, then let the user know
                 # and do not let them add the device.
-                return render(request, 'base_new_device.html', {'title': "NetStatus New Device",
+                return render(request, 'base_device_new.html', {'title': "NetStatus New Device",
                                                                 'error': "Error: A SNMP session could not be set up "
                                                                          "with the device you entered. Please make sure"
                                                                          " that the IPv4 address is correct and the "
@@ -123,25 +123,19 @@ def new_device(request):
         form = NewDeviceForm()
 
     pagevars = {'title': "NetStatus New Device", 'form': form.as_p()}
-    return render(request, 'base_new_device.html', pagevars)
+    return render(request, 'base_device_new.html', pagevars)
 
 
-def new_device_location(request):
-
-    # There is very little Python here as most of the map logic is done in Javascript.
-
-    return render(request, "base_new_device_location.html")
-
-
-def new_device_success(request):
+def device_new_success(request):
     """
     Lets the user know their device was added successfully and gives them options on what to do next.
     This is effectively a static view.
     """
     pagevars = {'title': "NetStatus New Device Success"}
-    return render(request, 'base_new_device_success.html', pagevars)
+    return render(request, 'base_device_new_success.html', pagevars)
 
-def remove_device(request):
+
+def device_remove(request):
     """
     A page for removing devices from the database. Could be used for missentered devices, or devices that are no longer
     in use.
@@ -168,7 +162,22 @@ def remove_device(request):
 
 
     pagevars = {'title': "NetStatus Remove Device", 'form': form.as_p()}
-    return render(request, 'base_remove_device.html', pagevars)
+    return render(request, 'base_device_remove.html', pagevars)
+
+
+def device_edit_db(request, device_id):
+    """
+    A page for editing the SNMP and database attributes of a device.
+    """
+
+    pagevars = {'title': "NetStatus Edit Device"}
+    form = EditDeviceForm()
+    return render(request, "base_device_edit_db.html", pagevars, form.as_p(), device_id)
+
+
+def device_edit_snmp(request, id):
+    pagevars = {'title': "NetStatus Edit Device"}
+    return render(request, "base_device_edit_db.html", pagevars)
 
 
 def device_info(request, id):
