@@ -6,7 +6,7 @@
 
     {% load staticfiles %}
 
-    <p>Device information for DEVICE</p>
+    <p>Device information for {{ device.name }}</p>
 
     <ul>
         <li>Name (from device): {{ system_information.sysName }}</li>
@@ -14,6 +14,7 @@
         <li>Location: {{ system_information.sysLocation }}</li>
         <li>Uptime: {{ system_information.sysUpTimeInstance }} days</li>
         <li>Contact: {{ system_information.sysContact }}</li>
+        <li><a href="{% url 'device_edit_snmp' device.id %}">Edit</a></li>
     </ul>
 
     <p>Log of system errors</p>

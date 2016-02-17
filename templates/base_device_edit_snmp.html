@@ -6,80 +6,21 @@
 
     {% load staticfiles %}
 
-    <p>Edit a device</p>
+    <p>Edit the SNMP attributes of a device</p>
 
-    <p>Choose the location of the device on the school map</p>
+    <form class="edit_smnp" action="{% url 'device_edit_snmp' id %}" method="post" enctype="multipart/form-data">
 
-    <div style="position: relative; left: 0; top: 0;">
-        <img src="{% static "buildings_plan_2011.jpg" %}" width="850px" height="600px" alt="School Map" id="map" style="position: relative; top: 0; left: 0;">
-        <img src="{% static "ethernet_port_neutral.png" %}" width="10px" height="10px" style="position: absolute; top: 0; left: 0;" id="eth">
-    </div>
+    {% csrf_token %}
 
+        <ul>
+            <li>Name (from device): <input id="sysName" value="{{ system_information.sysName }}"></li>
+            <li>Location (from device): <input id="sysLocation" value="{{ system_information.sysLocation }}"></li>
+            <li>Contact: <input id="sysContact" value="{{ system_information.sysContact }}"></li>
+        </ul>
 
-    <p>Please add device name and IP address</p>
+        <input type="submit" value="Edit device attributes">
 
-    {% if form.errors %}
-    {% for field in form %}
-        {% for error in field.errors %}
-            <div class="error">
-                <strong>{{ error|escape }}</strong>
-            </div>
-        {% endfor %}
-    {% endfor %}
-    {% for error in form.non_field_errors %}
-        <div class="error">
-            <strong>{{ error|escape }}</strong>
-        </div>
-    {% endfor %}
-    {% endif %}
-
-    {% if error %}
-        <p class="error">{{ error }}</p>
-    {% endif %}
-
-    <form class="edit_db" action="{% url 'device_edit' 'DB' id  %}" method="post" enctype="multipart/form-data">
-        {%  csrf_token %}
-        {{ form }}
-        <input type="submit" value="Edit database attributes">
     </form>
 
-
-        <script>
-
-        // Sets up objects based on HTML id's
-        var map = document.querySelector("#map");
-        var ethernet_port = document.querySelector("#eth");
-        var input_x = document.querySelector("#id_location_x");
-        var input_y = document.querySelector("#id_location_y");
-
-
-        // Sets up event handler for when the map is clicked
-        map.addEventListener("click", getClick, false);
-
-
-        // When the user clicks on the map...
-        function getClick(event) {
-
-            var x = 0;
-            var y = 0;
-
-            // Get the rectangle that encompasses our map img. This allows us to get relative x,y co-ordinates
-            // for the user click, allowing them to be replicated in any browser when showing the location back
-            // This makes it easy to store in our database too!
-            var rect = map.getBoundingClientRect();
-            x = event.clientX - rect.left;
-            y = event.clientY - rect.top;
-            // Show the user where they placed the device
-            ethernet_port.style.left = x + "px";
-            ethernet_port.style.top = y + "px";
-
-            input_x.value = x;
-            input_y.value = y;
-
-            console.log(input_x.value);
-            console.log(input_y.value);
-        }
-
-        </script>
 
 {% endblock %}

@@ -9,12 +9,16 @@ class NewDeviceForm(forms.Form):
     location_y = forms.DecimalField(max_digits=100, decimal_places=20, widget=forms.HiddenInput(), initial=0)
 
 
-class EditDeviceForm(forms.Form):
+class EditDeviceForm(forms.ModelForm):
     class Meta:
 
         model = Device
 
         fields = ('name', 'ipv4_address', 'location_x', 'location_y')
+
+        widgets = {'location_x': forms.HiddenInput(), 'location_y': forms.HiddenInput()}
+
+        labels = {'name': 'Device Name', 'ipv4_address': 'Device IPv4 Address'}
 
 
 class RemoveDeviceForm(forms.Form):

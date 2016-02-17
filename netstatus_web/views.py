@@ -7,6 +7,7 @@ from .utils import ping, setup_snmp_session, timeticks_to_days
 from .forms import NewDeviceForm, RemoveDeviceForm, EditDeviceForm
 from .models import Device
 from django.core.urlresolvers import reverse
+from django.core.exceptions import ObjectDoesNotExist
 
 
 def main(request):
@@ -45,36 +46,20 @@ def piechart_online(request):
             device.save()
 
     custom_style = pygal.style.Style(
-        colors=("#ff0000", "#006600")
+        background='transparent',
+        colors=("#006600", "#ff0000")
     )
 
-    pie_chart = pygal.Pie(style=custom_style)
+    pie_chart = pygal.Pie(style=custom_style, human_readable=True, print_values=True)
 
     pie_chart.title = "Number of online and offline devices on page load"
 
     pie_chart.add("Online devices", online)
     pie_chart.add("Offline devices", offline)
 
-    # This is used to save the image into memory (a buffer) instead of a file.
-    # This increases performance as it saves on HDD writes and reads.
-    image_buffer = io.BytesIO()
-
-
-    # This plots a pie chart - the autopct lambda function is used to reformat the percentage back into raw values.
-    #plt.pie(sizes, labels=labels, colors=colors,
-    #    autopct=lambda f: '{:.0f}'.format(f * sum(sizes) / 100), shadow=False, startangle=90)
-    # Set aspect ratio to be equal so that pie is drawn as a circle.
-    #plt.axis('equal')
-
-    #plt.gcf().savefig(image_buffer, format='png')
-
-    pie_chart.render_to_file(image_buffer)
-
-    image_buffer.seek(0)
-
     # Returns a PNG image only - not a web page
     # The browser and user wouldn't know this is dynamically generated.
-    return HttpResponse(image_buffer.read(), content_type="image/svg+xml")
+    return pie_chart.render_django_response()
 
 
 def device_list(request):
@@ -175,19 +160,68 @@ def device_remove(request):
     return render(request, 'base_device_remove.html', pagevars)
 
 
-def device_edit_db(request, device_id):
+def device_edit_db(request, id):
     """
     A page for editing the SNMP and database attributes of a device.
     """
 
-    pagevars = {'title': "NetStatus Edit Device"}
-    form = EditDeviceForm()
-    return render(request, "base_device_edit_db.html", pagevars, form.as_p(), device_id)
+    try:
+        device = Device.objects.get(pk=id)
+    except ObjectDoesNotExist:
+        raise Http404
+    except ValueError:
+        # Test in int field
+        raise Http404
+
+    if request.method == "POST":
+        form = EditDeviceForm(request.POST, instance=device)
+
+        if form.is_valid():
+
+            form.save()
+
+            return HttpResponseRedirect(reverse('device_info') + id)
+
+    else:
+        form = EditDeviceForm(instance=device)
+
+    pagevars = {'title': "NetStatus Edit Device", 'form': form.as_p(), 'id': id, 'device': device}
+
+    return render(request, "base_device_edit_db.html", pagevars)
 
 
 def device_edit_snmp(request, id):
-    pagevars = {'title': "NetStatus Edit Device"}
-    return render(request, "base_device_edit_db.html", pagevars)
+
+    try:
+        device = Device.objects.get(pk=id)
+    except ObjectDoesNotExist:
+        raise Http404
+    except ValueError:
+        # Test in int field
+        raise Http404
+
+    if not ping(device.ipv4_address):
+        pagevars = {'title': 'Connection to device failed', 'info': 'Error, connection to the device specified failed. '
+                                                                    'The device may be offline, or not accepting SNMP '
+                                                                    'requests. Sorry, this means that the system will '
+                                                                    'be unable to edit the SNMP based attributes of the'
+                                                                    ' device.'}
+        return render(request, "base_get_device_info.html", pagevars)
+
+    session = setup_snmp_session(device.ipv4_address)
+
+    system_items = session.walk('system')
+
+    system_information = {}
+
+    for i in system_items:
+        system_information[i.oid] = i.value
+
+
+
+
+    pagevars = {'title': "NetStatus Edit Device", 'device': device, 'system_information': system_information, 'id': id}
+    return render(request, "base_device_edit_snmp.html", pagevars)
 
 
 def device_info(request, id):
@@ -227,6 +261,7 @@ def device_info(request, id):
         if item.value.startswith('W'):
             log_items_strings.append(item.value)
 
-    pagevars = {'title': "device info", 'system_information': system_information, 'log_items_strings': log_items_strings}
+    pagevars = {'title': "device info", 'system_information': system_information,
+                'log_items_strings': log_items_strings, 'device': device}
 
     return render(request, "base_device_info.html", pagevars)
