@@ -1,5 +1,7 @@
 from django.shortcuts import render, Http404, HttpResponse, HttpResponseRedirect
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
+import pygal
+import pygal.style
 import io
 from .utils import ping, setup_snmp_session, timeticks_to_days
 from .forms import NewDeviceForm, RemoveDeviceForm, EditDeviceForm
@@ -42,29 +44,37 @@ def piechart_online(request):
             device.online = False
             device.save()
 
-    labels = 'Offline', 'Online'
+    custom_style = pygal.style.Style(
+        colors=("#ff0000", "#006600")
+    )
 
-    sizes = [offline, online]
+    pie_chart = pygal.Pie(style=custom_style)
 
-    colors = ['red', 'green']
+    pie_chart.title = "Number of online and offline devices on page load"
 
-    # This plots a pie chart - the autopct lambda function is used to reformat the percentage back into raw values.
-    plt.pie(sizes, labels=labels, colors=colors,
-        autopct=lambda f: '{:.0f}'.format(f * sum(sizes) / 100), shadow=False, startangle=90)
-    # Set aspect ratio to be equal so that pie is drawn as a circle.
-    plt.axis('equal')
+    pie_chart.add("Online devices", online)
+    pie_chart.add("Offline devices", offline)
 
     # This is used to save the image into memory (a buffer) instead of a file.
     # This increases performance as it saves on HDD writes and reads.
     image_buffer = io.BytesIO()
 
-    plt.gcf().savefig(image_buffer, format='png')
+
+    # This plots a pie chart - the autopct lambda function is used to reformat the percentage back into raw values.
+    #plt.pie(sizes, labels=labels, colors=colors,
+    #    autopct=lambda f: '{:.0f}'.format(f * sum(sizes) / 100), shadow=False, startangle=90)
+    # Set aspect ratio to be equal so that pie is drawn as a circle.
+    #plt.axis('equal')
+
+    #plt.gcf().savefig(image_buffer, format='png')
+
+    pie_chart.render_to_file(image_buffer)
 
     image_buffer.seek(0)
 
     # Returns a PNG image only - not a web page
     # The browser and user wouldn't know this is dynamically generated.
-    return HttpResponse(image_buffer.read(), content_type="image/png")
+    return HttpResponse(image_buffer.read(), content_type="image/svg+xml")
 
 
 def device_list(request):
