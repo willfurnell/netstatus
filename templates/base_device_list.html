@@ -20,7 +20,7 @@
                     </a>
                         <div class="popup" id="popup-{{ device.id }}">
                         <div class="popup-content">
-                            <p>{{ device.name }}. Last checked to be {% if device.online == True %}<span class="text-online">Online</span>{% else %}<span class="text-offline">Offline</span>{% endif %}. IPv4 address: {{ device.ipv4_address }}.<br /><a href="{% url 'device_info' device.id %}">More information.</a></p>
+                            <p>{{ device.name }}. Last checked to be {% if device.online == True %}<span class="text-online">Online</span>{% else %}<span class="text-offline">Offline</span>{% endif %}. IPv4 address: {{ device.ipv4_address }}.<br /><a href="{% url 'device-info' device.id %}">More information.</a></p>
                                 <p style="font-size: 10px;"><a href="#" onclick="deviceInfoPopup({{ device.id }})">close window</a></p>
                         </div>
                         </div>

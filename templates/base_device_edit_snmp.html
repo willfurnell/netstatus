@@ -8,14 +8,14 @@
 
     <p>Edit the SNMP attributes of a device</p>
 
-    <form class="edit_smnp" action="{% url 'device_edit_snmp' id %}" method="post" enctype="multipart/form-data">
+    <form id="edit_snmp" class="edit_smnp" action="{% url 'device-edit-snmp' id %}" method="post" enctype="multipart/form-data">
 
     {% csrf_token %}
 
         <ul>
-            <li>Name (from device): <input id="sysName" value="{{ system_information.sysName }}"></li>
-            <li>Location (from device): <input id="sysLocation" value="{{ system_information.sysLocation }}"></li>
-            <li>Contact: <input id="sysContact" value="{{ system_information.sysContact }}"></li>
+            <li>Name (from device): <input type="text" name="sysName" value="{{ system_information.sysName }}"></li>
+            <li>Location (from device): <input type="text" name="sysLocation" value="{{ system_information.sysLocation }}" /></li>
+            <li>Contact: <input type="text" name="sysContact" value="{{ system_information.sysContact }}"></li>
         </ul>
 
         <input type="submit" value="Edit device attributes">

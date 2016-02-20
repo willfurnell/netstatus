@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+
+    {% load staticfiles %}
+
+    <p>Editing the device was a success!</p>
+    <p><a href="{% url 'main' %}">Return to the dashboard</a><br />
+    <a href="{% url 'device-list' %}">Return to the device list</a></p>
+
+{% endblock %}

@@ -37,7 +37,7 @@
         <p class="error">{{ error }}</p>
     {% endif %}
 
-    <form class="edit_db" action="{% url 'device_edit_db' id %}" method="post" enctype="multipart/form-data">
+    <form class="edit_db" action="{% url 'device-edit-db' id %}" method="post" enctype="multipart/form-data">
         {%  csrf_token %}
         {{ form }}
         <input type="submit" value="Edit database attributes">

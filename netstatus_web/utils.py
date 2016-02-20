@@ -27,6 +27,13 @@ def ping(ip):
         return False
 
 
+def check_connect_failure_return(ip):
+    """
+    A wrapper for the 'ping' function to return that there was a failure connecting to the device to the user
+    """
+    return NotImplemented
+
+
 def timeticks_to_days(timeticks):
     """
     Converts SNMP timeticks to a value in days, which is much more human readable.
@@ -37,7 +44,6 @@ def timeticks_to_days(timeticks):
 def setup_snmp_session(ip):
     """
     Sets up an SNMP session with a device and returns this session.
-    Will return a fully rendered page with information saying that the connection to the device failed.
     """
     session = Session(hostname=ip, community='***REMOVED***', version=2)
     return session

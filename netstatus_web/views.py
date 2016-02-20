@@ -77,7 +77,8 @@ def device_list(request):
 
 def device_new(request):
     """
-    A page for creating a new entry in the database for a new device
+    A page for creating a new entry in the database for a new device, gets the user submitted values from the form.
+    X and Y co-ordinates are also obtained from the Javascript in the HTML page.
     """
 
     # Only go if user submits a form
@@ -111,7 +112,7 @@ def device_new(request):
 
             device.save()
 
-            return HttpResponseRedirect(reverse('new-device_success'))
+            return HttpResponseRedirect(reverse('new-device-success'))
 
     # if a GET (or any other method) we'll create a blank form
     else:
@@ -136,7 +137,7 @@ def device_remove(request):
     in use.
     """
 
-        # Only go if user submits a form
+    # Only go if user submits a form
     if request.method == 'POST':
         # create a form instance and populate it with data from the request:
         form = RemoveDeviceForm(request.POST)
@@ -155,14 +156,14 @@ def device_remove(request):
     else:
         form = RemoveDeviceForm()
 
-
     pagevars = {'title': "NetStatus Remove Device", 'form': form.as_p()}
     return render(request, 'base_device_remove.html', pagevars)
 
 
 def device_edit_db(request, id):
     """
-    A page for editing the SNMP and database attributes of a device.
+    A page for editing the database attributes of a device, uses a ModelForm to populate data from the database, and
+    changes are reflected from user changes when submitting the form.
     """
 
     try:
@@ -180,7 +181,9 @@ def device_edit_db(request, id):
 
             form.save()
 
-            return HttpResponseRedirect(reverse('device_info') + id)
+            print(device.id)
+
+            return HttpResponseRedirect(reverse('device-list'))
 
     else:
         form = EditDeviceForm(instance=device)
@@ -191,6 +194,10 @@ def device_edit_db(request, id):
 
 
 def device_edit_snmp(request, id):
+    """
+    Page for editing the SNMP attributes of a device. Returns form with pre-entered values from the device.
+    Sets SNMP attributes based on submitted form.
+    """
 
     try:
         device = Device.objects.get(pk=id)
@@ -200,6 +207,7 @@ def device_edit_snmp(request, id):
         # Test in int field
         raise Http404
 
+    # Check the device is online before getting or changing attributes
     if not ping(device.ipv4_address):
         pagevars = {'title': 'Connection to device failed', 'info': 'Error, connection to the device specified failed. '
                                                                     'The device may be offline, or not accepting SNMP '
@@ -207,6 +215,22 @@ def device_edit_snmp(request, id):
                                                                     'be unable to edit the SNMP based attributes of the'
                                                                     ' device.'}
         return render(request, "base_get_device_info.html", pagevars)
+
+    if request.method == "POST":
+        # Get users input from form
+        sysName = request.POST.get('sysName')
+        sysLocation = request.POST.get('sysLocation')
+        sysContact = request.POST.get('sysContact')
+
+        # Establish SNMP session with device
+        session = setup_snmp_session(device.ipv4_address)
+
+        # Set device SNMP variables to user input values
+        session.set("sysName.0", sysName)
+        session.set("sysLocation.0", sysLocation)
+        session.set("sysContact.0", sysContact)
+
+        return HttpResponseRedirect(reverse('device-list'))
 
     session = setup_snmp_session(device.ipv4_address)
 
@@ -217,19 +241,29 @@ def device_edit_snmp(request, id):
     for i in system_items:
         system_information[i.oid] = i.value
 
-
-
-
     pagevars = {'title': "NetStatus Edit Device", 'device': device, 'system_information': system_information, 'id': id}
     return render(request, "base_device_edit_snmp.html", pagevars)
 
 
+def device_edit_success(request):
+    """
+    Tell the user that editing the device was a success.
+    """
+    pagevars = {'title': "NetStatus Edit Device success"}
+    return render(request, "base_device_edit_success.html", pagevars)
+
+
 def device_info(request, id):
     """
-    Sample testing page for getting information via SNMP from a device.
+    Page for getting information via SNMP from a device, and outputting it to the user. Gets system based attributes
+    and logging information.
     """
-
-    device = Device.objects.get(pk=id)
+    try:
+        device = Device.objects.get(pk=id)
+    except ObjectDoesNotExist:
+        return Http404
+    except ValueError:
+        return Http404
 
     ip = device.ipv4_address
 
