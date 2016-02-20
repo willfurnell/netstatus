@@ -8,6 +8,7 @@ from .forms import NewDeviceForm, RemoveDeviceForm, EditDeviceForm
 from .models import Device
 from django.core.urlresolvers import reverse
 from django.core.exceptions import ObjectDoesNotExist
+from easysnmp import exceptions
 
 
 def main(request):
@@ -183,7 +184,7 @@ def device_edit_db(request, id):
 
             print(device.id)
 
-            return HttpResponseRedirect(reverse('device-list'))
+            return HttpResponseRedirect(reverse('device-edit-success'))
 
     else:
         form = EditDeviceForm(instance=device)
@@ -214,7 +215,7 @@ def device_edit_snmp(request, id):
                                                                     'requests. Sorry, this means that the system will '
                                                                     'be unable to edit the SNMP based attributes of the'
                                                                     ' device.'}
-        return render(request, "base_get_device_info.html", pagevars)
+        return render(request, "base_error.html", pagevars)
 
     if request.method == "POST":
         # Get users input from form
@@ -226,11 +227,19 @@ def device_edit_snmp(request, id):
         session = setup_snmp_session(device.ipv4_address)
 
         # Set device SNMP variables to user input values
-        session.set("sysName.0", sysName)
-        session.set("sysLocation.0", sysLocation)
-        session.set("sysContact.0", sysContact)
+        try:
+            session.set("sysName.0", sysName)
+            session.set("sysLocation.0", sysLocation)
+            session.set("sysContact.0", sysContact)
+        except exceptions.EasySNMPTimeoutError:
+            # For some reason the EasySNMP library returns a timeout error when it cannot set attributes.
+            pagevars = {'title': 'Editing attributes failed!', 'info': 'Error! The device you are trying to edit has'
+                                                                       ' its community string set to read only mode. '
+                                                                       'Unfortunately, this means NetStatus cannot edit'
+                                                                       ' the SNMP attributes of the device.'}
+            return render(request, "base_error.html", pagevars)
 
-        return HttpResponseRedirect(reverse('device-list'))
+        return HttpResponseRedirect(reverse('device-edit-success'))
 
     session = setup_snmp_session(device.ipv4_address)
 
@@ -271,7 +280,7 @@ def device_info(request, id):
         pagevars = {'title': 'Connection to device failed', 'info': 'Error, connection to the device specified failed. '
                                                                     'The device may be offline, or not accepting SNMP '
                                                                     'requests.'}
-        return render(request, "base_get_device_info.html", pagevars)
+        return render(request, "base_error.html", pagevars)
 
     session = setup_snmp_session(ip)
 

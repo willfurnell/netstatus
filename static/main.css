@@ -126,3 +126,17 @@
     visibility: hidden;
 }
 */
+
+.button {
+    border-radius: 2px;
+    padding: 3px;
+    background-color: green;
+    color: white;
+    text-decoration: none;
+    border: 0;
+    font-size: 12px;
+}
+
+.b-red {
+    background-color: #ff0000;
+}

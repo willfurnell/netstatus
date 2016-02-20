@@ -45,7 +45,7 @@ def setup_snmp_session(ip):
     """
     Sets up an SNMP session with a device and returns this session.
     """
-    session = Session(hostname=ip, community='***REMOVED***', version=2)
+    session = Session(hostname=ip, community='***REMOVED***', version=2, timeout=0.1)
     return session
 
 

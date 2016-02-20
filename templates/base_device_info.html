@@ -14,8 +14,10 @@
         <li>Location: {{ system_information.sysLocation }}</li>
         <li>Uptime: {{ system_information.sysUpTimeInstance }} days</li>
         <li>Contact: {{ system_information.sysContact }}</li>
-        <li><a href="{% url 'device-edit-snmp' device.id %}">Edit</a></li>
     </ul>
+
+    <a class="button" href="{% url 'device-edit-snmp' device.id %}">Edit (SNMP)</a> <a class="button" href="{% url 'device-edit-db' device.id %}">Edit (Database)</a> <a class="button b-red" href="{% url 'remove-device' %}">Remove Device</a>
+
 
     <p>Log of system errors</p>
 
