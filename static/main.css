@@ -140,3 +140,10 @@
 .b-red {
     background-color: #ff0000;
 }
+
+.footer {
+    font-size: 8px;
+    margin-left: auto;
+    margin-right: auto;
+
+}

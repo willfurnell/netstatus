@@ -4,6 +4,7 @@ import base64
 from easysnmp import Session
 from easysnmp import exceptions
 
+
 def ping(ip):
     """
     'Pings' a specified IP address to check if it is online or not.

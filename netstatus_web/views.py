@@ -10,6 +10,8 @@ from django.core.urlresolvers import reverse
 from django.core.exceptions import ObjectDoesNotExist
 from easysnmp import exceptions
 
+# make a timeline of errors/logs for a device on a graph
+
 
 def main(request):
     """
@@ -48,7 +50,7 @@ def piechart_online(request):
 
     custom_style = pygal.style.Style(
         background='transparent',
-        colors=("#006600", "#ff0000")
+        colors=("#006600", "#ff0000") # Colours (red and green) for the offline/online status
     )
 
     pie_chart = pygal.Pie(style=custom_style, human_readable=True, print_values=True)
@@ -166,7 +168,7 @@ def device_edit_db(request, id):
     A page for editing the database attributes of a device, uses a ModelForm to populate data from the database, and
     changes are reflected from user changes when submitting the form.
     """
-
+    # Checks that the requested ID does actually belong to a device
     try:
         device = Device.objects.get(pk=id)
     except ObjectDoesNotExist:
@@ -199,13 +201,13 @@ def device_edit_snmp(request, id):
     Page for editing the SNMP attributes of a device. Returns form with pre-entered values from the device.
     Sets SNMP attributes based on submitted form.
     """
-
+    # Checks that the requested ID does actually belong to a device
     try:
         device = Device.objects.get(pk=id)
     except ObjectDoesNotExist:
         raise Http404
     except ValueError:
-        # Test in int field
+        # Text in int field
         raise Http404
 
     # Check the device is online before getting or changing attributes
@@ -231,8 +233,9 @@ def device_edit_snmp(request, id):
             session.set("sysName.0", sysName)
             session.set("sysLocation.0", sysLocation)
             session.set("sysContact.0", sysContact)
-        except exceptions.EasySNMPTimeoutError:
-            # For some reason the EasySNMP library returns a timeout error when it cannot set attributes.
+        except (exceptions.EasySNMPTimeoutError, exceptions.EasySNMPError):
+            # For some reason the EasySNMP library returns a timeout error when it cannot set attributes for certain
+            # models of switches. The EasySNMPError exception covers noAccess.
             pagevars = {'title': 'Editing attributes failed!', 'info': 'Error! The device you are trying to edit has'
                                                                        ' its community string set to read only mode. '
                                                                        'Unfortunately, this means NetStatus cannot edit'
@@ -267,6 +270,7 @@ def device_info(request, id):
     Page for getting information via SNMP from a device, and outputting it to the user. Gets system based attributes
     and logging information.
     """
+    # Checks that the requested ID does actually belong to a device
     try:
         device = Device.objects.get(pk=id)
     except ObjectDoesNotExist:
@@ -304,7 +308,7 @@ def device_info(request, id):
         if item.value.startswith('W'):
             log_items_strings.append(item.value)
 
-    pagevars = {'title': "device info", 'system_information': system_information,
+    pagevars = {'title': "NetStatus for " + device.name, 'system_information': system_information,
                 'log_items_strings': log_items_strings, 'device': device}
 
     return render(request, "base_device_info.html", pagevars)
