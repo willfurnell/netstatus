@@ -13,9 +13,9 @@
             {% for device in set_of_devices %}
                     <a href="#" onclick="deviceInfoPopup({{ device.id }})">
                         {% if device.online == 1 %}
-                            <img src="{% static "ethernet_port_green.png" %}" width="10px" height="10px" style="position: absolute; top: {{ device.location_y }}px; left: {{ device.location_x }}px;" id="eth">
+                            <img src="{% static "ethernet_port_green.png" %}" width="5px" height="5px" style="position: absolute; top: {{ device.location_y }}px; left: {{ device.location_x }}px;" id="eth">
                         {% else %}
-                            <img src="{% static "ethernet_port_red.png" %}" width="10px" height="10px" style="position: absolute; top: {{ device.location_y }}px; left: {{ device.location_x }}px;" id="eth">
+                            <img src="{% static "ethernet_port_red.png" %}" width="5px" height="5px" style="position: absolute; top: {{ device.location_y }}px; left: {{ device.location_x }}px;" id="eth">
                         {% endif %}
                     </a>
                         <div class="popup" id="popup-{{ device.id }}">

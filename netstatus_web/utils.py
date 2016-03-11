@@ -3,7 +3,9 @@ from django.shortcuts import render, Http404, HttpResponse
 import base64
 from easysnmp import Session
 from easysnmp import exceptions
-
+import binascii
+from subprocess import check_output, CalledProcessError
+import re
 
 def ping(ip):
     """
@@ -46,7 +48,7 @@ def setup_snmp_session(ip):
     """
     Sets up an SNMP session with a device and returns this session.
     """
-    session = Session(hostname=ip, community='***REMOVED***', version=2, timeout=0.1)
+    session = Session(hostname=ip, community='***REMOVED***', version=2, timeout=2)
     return session
 
 
@@ -60,3 +62,52 @@ def make_base64_image(image_buffer):
     # 'graph_image': graph_b64.lstrip("b'").rstrip("'")
 
     # print(ping('10.49.86.241'))
+
+def sort_log(log, so):
+    """
+    Function used to sort the SNMP log file to order of importance and or date
+    """
+    return NotImplementedError
+
+
+def ip_to_location():
+    pass
+
+
+def bin_to_hex_string(input):
+    """
+    Gets a binary string from the SNMP data of a switch, which we know is encoded in latin-1 from reading the
+    easysnmp source. Converts this input to raw bytes and then converts to hexadecimal, then converts to a string.
+    Returns a hex value of the data, allowing us to get MAC addresses from the switches.
+    """
+    return binascii.hexlify(bytes(input, 'latin-1')).decode('utf-8')
+
+
+def get_mac_address(ip_address):
+    """
+    Uses the ARP MAC address table to get the MAC address for a specified IP address.
+    """
+    # Opens a new subprocess using the 'ping' command line utility. Pings the specified IP address once.
+    try:
+        ping_out = check_output(["/sbin/ping", "-c 1", ip_address])
+    except CalledProcessError:
+        return "ERR_PING_FAIL"
+
+    # This means the MAC address is now in our arp table, so we can find it.
+    try:
+        arp_out = check_output(["/usr/sbin/arp", "-n", ip_address])
+    except CalledProcessError:
+        return "ERR_ARP_FAIL"
+
+    # Uses a regular expression to search for the MAC address in the ARP ouput.
+    mac = re.search("([a-fA-F0-9]{2}:){5}([a-fA-F0-9]{2})", str(arp_out))
+
+    if mac == None:
+        return "ERR_MALFORMED_MAC"
+
+    # Gets what the regex search found
+    mac_to_find = mac.group(0)
+
+    mac_to_find = mac_to_find.replace(":", "")
+
+    return mac_to_find

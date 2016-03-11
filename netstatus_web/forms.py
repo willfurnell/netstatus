@@ -23,3 +23,6 @@ class EditDeviceForm(forms.ModelForm):
 
 class RemoveDeviceForm(forms.Form):
     choose_device = forms.ModelChoiceField(queryset=Device.objects.all(), label="Choose a device")
+
+class SearchForm(forms.Form):
+    ipv4_address = forms.CharField(max_length=255, label="IPv4 address")

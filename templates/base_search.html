@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+
+    <p>Search for a device on the network</p>
+
+    <form class="search" action="{% url 'search' %}" method="post" enctype="multipart/form-data">
+        {%  csrf_token %}
+        <label for="ipv4_address">Device IPv4 address: </label><input type="text" name="ipv4_address" id="ipv4_address"><br />
+        <input type="submit" value="Search for device">
+    </form>
+
+    <br />
+    <br />
+    <br />
+
+    <form class="delcache" action="" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="submit" value="Delete search cached results">
+    </form>
+
+{% endblock %}

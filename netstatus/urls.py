@@ -30,4 +30,6 @@ urlpatterns = [
     url(r'^device/edit/snmp/(?P<id>[0-9]+)/$', views.device_edit_snmp, name='device-edit-snmp'),
     url(r'^device/edit/success/$', views.device_edit_success, name='device-edit-success'),
     url(r'^piechart-online$', views.piechart_online, name='piechart-online'),
+    url(r'^testing$', views.testing, name='testing'),
+    url(r'^search$', views.search, name='search')
 ]
