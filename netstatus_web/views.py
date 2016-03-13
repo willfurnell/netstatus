@@ -3,16 +3,16 @@ from django.shortcuts import render, Http404, HttpResponse, HttpResponseRedirect
 import pygal
 import pygal.style
 import io
-from .utils import ping, setup_snmp_session, timeticks_to_days, sort_log, bin_to_hex_string, get_mac_address
+from .utils import ping, setup_snmp_session, timeticks_to_days, sort_log, bin_to_hex_string, get_mac_address, \
+    update_ignored_ports, update_mac_to_port
 from .forms import NewDeviceForm, RemoveDeviceForm, EditDeviceForm
-from .models import Device
+from .models import Device, LastUpdated, MACtoPort, IgnoredPort
 from django.core.urlresolvers import reverse
 from django.core.exceptions import ObjectDoesNotExist
 from easysnmp import exceptions
 import json
 import socket
-
-# make a timeline of errors/logs for a device on a graph
+import time
 
 
 def main(request):
@@ -319,6 +319,7 @@ def device_info(request, id):
 
 def testing(request):
 
+    print(time.time())
 
     # if the sysname from the output matches one that is already in our database, then we can assume it is an uplink or
     # downlink to another switch. If it isn't in the database, then we can assume the device is an IP phone or something
@@ -339,6 +340,14 @@ def testing(request):
 
 
 def search(request):
+    """
+    Lets the user search for a device on the whole network, assuming it is connected to one of the switches tracked
+    by NetStatus.
+
+    First gets the MAC address of the device to find, and then gets the LLDP port tables (to get a list of ports to
+    ignore), MAC address tables and port tables from all of the switches on the system.
+    Checks the MAC address against the filtered MAC address tables to see where on the network the device is.
+    """
 
     if request.method == "POST":
         user_input = request.POST.get('ipv4_address')
@@ -354,7 +363,7 @@ def search(request):
 
         if mac_to_find == "ERR_PING_FAIL":
             pagevars = {'title': "Search for a device", 'info': "Error: The system could not ping the device you "
-                                                                "specified! <br /> The device firewall may be "
+                                                                "specified! The device firewall may be "
                                                                 "preventing this."}
 
             return render(request, "base_error.html", pagevars)
@@ -367,53 +376,68 @@ def search(request):
 
         device_list = Device.objects.all()
 
-        ports_to_ignore = {}
+        # To speed things up, the search system will generally used cached results in the database.
+        # The ignored ports will only be rechecked if a week has passed, as these are likely to rarely change.
+        # The MAC address to port results need to be updated more regularly as this data changes more often, so a value
+        # of 1 day has been chosen. The user can always choose to clear the cached results and start a search from
+        # scratch if they are having problems finding a correct location.
 
-        for device in device_list:
-            if device.online is True and device.ipv4_address != "10.49.84.1":
-                session = setup_snmp_session(device.ipv4_address)
-                lldp_output = session.walk("1.0.8802.1.1.2.1.4.1.1.4")
-                ports_to_ignore[device.id] = []
-                for i in lldp_output:
-                    # The whole OID is returned. Becuase we only want the port, we need to remove all the preceeding parts of the OID. We also need to remove the last 2
-                    # characters as they are integers incrementing per port.
-                    if (i.oid.replace("iso.0.8802.1.1.2.1.4.1.1.4.0.", "")[:-2] not in ports_to_ignore) and (i.oid.replace("iso.0.8802.1.1.2.1.4.1.1.4.0.", "")[:-2] != ""):
-                        ports_to_ignore[device.id].append(i.oid.replace("iso.0.8802.1.1.2.1.4.1.1.4.0.", "")[:-2])
+        try:
+            last_updated = LastUpdated.objects.get(pk=1)
+
+            if int(time.time()) >= last_updated.ignored_port + 604800:
+                last_updated.ignored_port = int(time.time())
+                # We delete the existing objects every time to 'purge' the cache
+                IgnoredPort.objects.all().delete()
+
+                try:
+                    update_ignored_ports(device_list)
+                except exceptions.EasySNMPTimeoutError:
+                    pagevars = {'title': "Search for a device", 'info':
+                        "Error: The system could not contact a switch during the search."}
+
+                    return render(request, "base_error.html", pagevars)
+
+            if int(time.time()) >= last_updated.mac_to_port + 8600:
+                last_updated.mac_to_port = time.time()
+                # We delete the existing objects every time to 'purge' the cache
+                MACtoPort.objects.all().delete()
+
+                try:
+                    update_mac_to_port(device_list)
+                except exceptions.EasySNMPTimeoutError:
+                    pagevars = {'title': "Search for a device", 'info':
+                        "Error: The system could not contact a switch during the search."}
+
+                    return render(request, "base_error.html", pagevars)
+        except ObjectDoesNotExist:
+            last_updated = LastUpdated(mac_to_port=int(time.time()), ignored_port=int(time.time()))
+            last_updated.save()
+
+            try:
+                update_ignored_ports(device_list)
+                update_mac_to_port(device_list)
+            except exceptions.EasySNMPTimeoutError:
+                pagevars = {'title': "Search for a device", 'info':
+                    "Error: The system could not contact a switch during the search."}
+
+                return render(request, "base_error.html", pagevars)
 
         # .1.3.6.1.2.1.17.4.3.1.1
 
-        mac_to_port = {}
+        try:
+            mac_to_port_info = MACtoPort.objects.all().filter(mac_address__exact=mac_to_find)
+            device = Device.objects.get(mac_to_port_info.device)
 
-        for device in device_list:
-            if device.ipv4_address != "10.49.84.1" and device.online is True:
-                mac_to_port[device.id] = {}
+            pagevars = {'title': "Device search results", 'device': device, 'mac_to_port_info': mac_to_port_info}
 
-                session = setup_snmp_session(device.ipv4_address)
+            return render(request, "base_search_result.html", pagevars)
 
-                # OID for dot1dTpFdbAddress (MAC Address table)
-                # http://oid-info.com/get/1.3.6.1.2.1.17.4.3.1.1
-                mac_address_table = session.walk("1.3.6.1.2.1.17.4.3.1.1")
-                # OID for dot1dTpFdbPort (Port table)
-                # http://oid-info.com/get/1.3.6.1.2.1.17.4.3.1.2
-                port_address_table = session.walk(".1.3.6.1.2.1.17.4.3.1.2")
+        except ObjectDoesNotExist:
+            pagevars = {'title': "Device search results"}
 
-                for mac_address in mac_address_table:
-                    for port in port_address_table:
-                        port_oid = port.oid.replace('mib-2.17.4.3.1.2', 'mib-2.17.4.3.1.1')
-                        if port_oid == mac_address.oid:
-                            if port.value not in ports_to_ignore[device.id]:
-                                # Using .replace("b'", "") gets rid of any b char on the end of the mac address string.
-                                # this causes us some serious problems...!
-                                mac_to_port[device.id][bin_to_hex_string(mac_address.value)] = port.value
+            return render(request, "base_search_noresult.html", pagevars)
 
-        out = "Could not find device!"
-        for switch in mac_to_port:
-            for mac_address in mac_to_port[switch]:
-                if mac_address == mac_to_find:
-                    out = "MAC: " + str(mac_to_find) + " Switch: " + str(switch) + " Port: " + mac_to_port[switch][mac_address]
-                    break
-
-        return HttpResponse(out)
 
     pagevars = {'title': "Search for a device"}
 

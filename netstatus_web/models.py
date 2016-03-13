@@ -21,5 +21,15 @@ class Device(models.Model):
 class MACtoPort(models.Model):
     device = models.ForeignKey(Device)
     mac_address = models.CharField(max_length=12, validators=[RegexValidator(
-        regex='^([a-fA-F0-9]{2}:){5}([a-fA-F0-9]{2})$')])
+        regex='^([a-fA-F0-9]{2}){5}([a-fA-F0-9]{2})$')])
     port = models.IntegerField()
+
+
+class IgnoredPort(models.Model):
+    device = models.ForeignKey(Device)
+    port = models.IntegerField()
+
+
+class LastUpdated(models.Model):
+    mac_to_port = models.IntegerField()
+    ignored_port = models.IntegerField()

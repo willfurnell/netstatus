@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+
+    {% load staticfiles %}
+
+    <p>NetStatus Device Search Result</p>
+
+    <p>Unfortunately, NetStatus could not find the device you specified on the network. <br /> Note: NetStatus cannot track devices connected to the core switch or IP phones with a built in Ethernet switch.</p>
+
+    <p><a href="{% url 'search' %}">Try another device?</a></p>
+
+
+{% endblock %}

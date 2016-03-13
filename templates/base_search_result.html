@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+
+    {% load staticfiles %}
+
+    <p>NetStatus Device Search Result</p>
+
+    <p>NetStatus found the device! It is connected to {{ device.name }} on port {{ mac_to_port_info.port }} with MAC Address {{ mac_to_port_info.mac_address }}.</p>
+    <p>The following diagram shows the location of {{ device.name }}.</p>
+
+        <div style="position: relative; left: 0; top: 0;">
+        <img src="{% static "buildings_plan_2011.jpg" %}" width="850px" height="600px" alt="School Map" id="map" style="position: relative; top: 0; left: 0;">
+            <img src="{% static "ethernet_port_neutral.png" %}" width="5px" height="5px" style="position: absolute; top: {{ device.location_y }}px; left: {{ device.location_x }}px;" id="eth">
+    </div>
+
+{% endblock %}
