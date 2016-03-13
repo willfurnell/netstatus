@@ -352,27 +352,49 @@ def search(request):
     if request.method == "POST":
         user_input = request.POST.get('ipv4_address')
 
+        if 'delcache' in request.POST:
+            # The user has requested that we delete all cached items
+            try:
+                last_updated = LastUpdated.objects.get(pk=1)
+                # Setting the time stamps to 0 will force the system to regrab any results as 0 indicates that the
+                # last updated time was Thurs 1st Jan 1970 at 00:00:00 GMT.
+                last_updated.ignored_port = 0
+                last_updated.mac_to_port = 0
+                last_updated.save()
+            except:
+                # This is in case the user clicks 'Delete cache' before any searches have even been made!
+                last_updated = LastUpdated(mac_to_port=0, ignored_port=0)
+                last_updated.save()
+            IgnoredPort.objects.all().delete()
+            MACtoPort.objects.all().delete()
+
+            pagevars = {'title': "Search for a device", 'message': "Cache cleared successfully!"}
+
+            return render(request, "base_search.html", pagevars)
+
+
         try:
             socket.inet_aton(user_input)
         except socket.error:
-            pagevars = {'title': "Search for a device", 'info': "Error: The IPv4 address you specified was not valid!"}
+            pagevars = {'title': "Search for a device", 'message': "Error: The IPv4 address you specified was not "
+                                                                   "valid!"}
 
-            return render(request, "base_error.html", pagevars)
+            return render(request, "base_search.html", pagevars)
 
         mac_to_find = get_mac_address(user_input)
 
         if mac_to_find == "ERR_PING_FAIL":
-            pagevars = {'title': "Search for a device", 'info': "Error: The system could not ping the device you "
+            pagevars = {'title': "Search for a device", 'message': "Error: The system could not ping the device you "
                                                                 "specified! The device firewall may be "
                                                                 "preventing this."}
 
-            return render(request, "base_error.html", pagevars)
+            return render(request, "base_search.html", pagevars)
 
         if mac_to_find == "ERR_ARP_FAIL" or mac_to_find == "ERR_MALFORMED_MAC":
-            pagevars = {'title': "Search for a device", 'info': "Error: The system could not get the MAC address of "
+            pagevars = {'title': "Search for a device", 'message': "Error: The system could not get the MAC address of "
                                                                 "the device you specified."}
 
-            return render(request, "base_error.html", pagevars)
+            return render(request, "base_search.html", pagevars)
 
         device_list = Device.objects.all()
 
@@ -387,26 +409,28 @@ def search(request):
 
             if int(time.time()) >= last_updated.ignored_port + 604800:
                 last_updated.ignored_port = int(time.time())
+                last_updated.save()
                 # We delete the existing objects every time to 'purge' the cache
                 IgnoredPort.objects.all().delete()
 
                 try:
                     update_ignored_ports(device_list)
                 except exceptions.EasySNMPTimeoutError:
-                    pagevars = {'title': "Search for a device", 'info':
+                    pagevars = {'title': "Search for a device", 'message':
                         "Error: The system could not contact a switch during the search."}
 
-                    return render(request, "base_error.html", pagevars)
+                    return render(request, "base_search.html", pagevars)
 
             if int(time.time()) >= last_updated.mac_to_port + 8600:
                 last_updated.mac_to_port = time.time()
+                last_updated.save()
                 # We delete the existing objects every time to 'purge' the cache
                 MACtoPort.objects.all().delete()
 
                 try:
                     update_mac_to_port(device_list)
                 except exceptions.EasySNMPTimeoutError:
-                    pagevars = {'title': "Search for a device", 'info':
+                    pagevars = {'title': "Search for a device", 'message':
                         "Error: The system could not contact a switch during the search."}
 
                     return render(request, "base_error.html", pagevars)
@@ -418,10 +442,10 @@ def search(request):
                 update_ignored_ports(device_list)
                 update_mac_to_port(device_list)
             except exceptions.EasySNMPTimeoutError:
-                pagevars = {'title': "Search for a device", 'info':
+                pagevars = {'title': "Search for a device", 'message':
                     "Error: The system could not contact a switch during the search."}
 
-                return render(request, "base_error.html", pagevars)
+                return render(request, "base_search.html", pagevars)
 
         # .1.3.6.1.2.1.17.4.3.1.1
 

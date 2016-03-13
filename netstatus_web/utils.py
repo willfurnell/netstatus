@@ -162,6 +162,6 @@ def update_mac_to_port(device_list):
                         if port.value not in port_ignore_list(device):
                             # Using .replace("b'", "") gets rid of any b char on the end of the mac address string.
                             # this causes us some serious problems...!
-                            # Convert the MAC to hexadecimal and a string, and put it into our JSON.
+                            # Convert the MAC to hexadecimal and a string, and put it into our database.
                             entry = MACtoPort(device=device, mac_address=bin_to_hex_string(mac_address.value))
                             entry.save()
