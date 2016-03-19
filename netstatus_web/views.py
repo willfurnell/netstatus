@@ -3,14 +3,12 @@ from django.shortcuts import render, Http404, HttpResponse, HttpResponseRedirect
 import pygal
 import pygal.style
 import io
-from .utils import ping, setup_snmp_session, timeticks_to_days, sort_log, bin_to_hex_string, get_mac_address, \
-    update_ignored_ports, update_mac_to_port
+from .utils import *
 from .forms import NewDeviceForm, RemoveDeviceForm, EditDeviceForm
 from .models import Device, LastUpdated, MACtoPort, IgnoredPort
 from django.core.urlresolvers import reverse
 from django.core.exceptions import ObjectDoesNotExist
 from easysnmp import exceptions
-import json
 import socket
 import time
 
@@ -239,7 +237,7 @@ def device_edit_snmp(request, id):
             session.set("sysContact.0", sysContact)
         except (exceptions.EasySNMPTimeoutError, exceptions.EasySNMPError):
             # For some reason the EasySNMP library returns a timeout error when it cannot set attributes for certain
-            # models of switches. The EasySNMPError exception covers noAccess.
+            # models of switches. (HP 1910-16G). The EasySNMPError exception covers noAccess.
             pagevars = {'title': 'Editing attributes failed!', 'info': 'Error! The device you are trying to edit has'
                                                                        ' its community string set to read only mode. '
                                                                        'Unfortunately, this means NetStatus cannot edit'
@@ -319,8 +317,6 @@ def device_info(request, id):
 
 def testing(request):
 
-    print(time.time())
-
     # if the sysname from the output matches one that is already in our database, then we can assume it is an uplink or
     # downlink to another switch. If it isn't in the database, then we can assume the device is an IP phone or something
     # and we'll treat it as an end device and ignore it being shown as a switch as this will get really complicated
@@ -352,6 +348,7 @@ def search(request):
     if request.method == "POST":
         user_input = request.POST.get('ipv4_address')
 
+        # If the user has requested to delete the cached objects
         if 'delcache' in request.POST:
             # The user has requested that we delete all cached items
             try:
@@ -374,6 +371,8 @@ def search(request):
 
 
         try:
+            # Trys to establish a socket with the IP address the user provided. Will error if the address is not
+            # correct/valid etc.
             socket.inet_aton(user_input)
         except socket.error:
             pagevars = {'title': "Search for a device", 'message': "Error: The IPv4 address you specified was not "
@@ -381,8 +380,10 @@ def search(request):
 
             return render(request, "base_search.html", pagevars)
 
+        # Call the get_mac_address function in utils.py to get the MAC address of the IP address the user provided.
         mac_to_find = get_mac_address(user_input)
 
+        # ERR_PING_FAIL returned when get_mac_address cannot ping the specified device
         if mac_to_find == "ERR_PING_FAIL":
             pagevars = {'title': "Search for a device", 'message': "Error: The system could not ping the device you "
                                                                 "specified! The device firewall may be "
@@ -390,6 +391,8 @@ def search(request):
 
             return render(request, "base_search.html", pagevars)
 
+        # get_mac_address either didn't get a MAC address at all, or the one it did get wasn't the correct number of
+        # characters
         if mac_to_find == "ERR_ARP_FAIL" or mac_to_find == "ERR_MALFORMED_MAC":
             pagevars = {'title': "Search for a device", 'message': "Error: The system could not get the MAC address of "
                                                                 "the device you specified."}
@@ -404,9 +407,16 @@ def search(request):
         # of 1 day has been chosen. The user can always choose to clear the cached results and start a search from
         # scratch if they are having problems finding a correct location.
 
+        # Note: EasySNMPTimeoutError will be thrown when EasySNMP has problems connecting to a switch (even if it is
+        # online)
+
+        # A try statement is used in case this is the first run of the program. In this instance, the LastUpdated object
+        # with PK 1 will not exist yet. If the search function has been run before, then PK 1 will exist so the system
+        # can continue as normal.
         try:
             last_updated = LastUpdated.objects.get(pk=1)
 
+            # 604800 seconds = 1 week
             if int(time.time()) >= last_updated.ignored_port + 604800:
                 last_updated.ignored_port = int(time.time())
                 last_updated.save()
@@ -421,6 +431,7 @@ def search(request):
 
                     return render(request, "base_search.html", pagevars)
 
+            # 8600 seconds = 1 day
             if int(time.time()) >= last_updated.mac_to_port + 8600:
                 last_updated.mac_to_port = time.time()
                 last_updated.save()
@@ -430,18 +441,23 @@ def search(request):
                 try:
                     update_mac_to_port(device_list)
                 except exceptions.EasySNMPTimeoutError:
+                    # If connecting to a switch does fail...
                     pagevars = {'title': "Search for a device", 'message':
                         "Error: The system could not contact a switch during the search."}
 
                     return render(request, "base_error.html", pagevars)
+
         except ObjectDoesNotExist:
+            # This is the first run of the searching algorithm, so we need to initialise the PK 1 of LastUpdated
             last_updated = LastUpdated(mac_to_port=int(time.time()), ignored_port=int(time.time()))
             last_updated.save()
 
             try:
+                # Run through the algorithm fully. We don't need to check last updated times as this is the first run.
                 update_ignored_ports(device_list)
                 update_mac_to_port(device_list)
             except exceptions.EasySNMPTimeoutError:
+                # If connecting to a switch does fail...
                 pagevars = {'title': "Search for a device", 'message':
                     "Error: The system could not contact a switch during the search."}
 
@@ -450,14 +466,19 @@ def search(request):
         # .1.3.6.1.2.1.17.4.3.1.1
 
         try:
-            mac_to_port_info = MACtoPort.objects.all().filter(mac_address__exact=mac_to_find)
-            device = Device.objects.get(mac_to_port_info.device)
+            # Get the first result from the database in the MACtoPort table corresponding with the MAC address of the
+            # device the user entered.
+            mac_to_port_info = MACtoPort.objects.all().filter(mac_address__exact=mac_to_find).first()
+            # Get the corresponding switch attributes from the database
+            device = Device.objects.get(id=mac_to_port_info.device_id)
 
             pagevars = {'title': "Device search results", 'device': device, 'mac_to_port_info': mac_to_port_info}
 
             return render(request, "base_search_result.html", pagevars)
 
         except ObjectDoesNotExist:
+            # The MAC address could not be found in the database - so the device could have been added recently,
+            # or its on a switch that we just don't track (eg. behind an IP phone).
             pagevars = {'title': "Device search results"}
 
             return render(request, "base_search_noresult.html", pagevars)

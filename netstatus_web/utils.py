@@ -159,9 +159,11 @@ def update_mac_to_port(device_list):
                     port_oid = port.oid.replace('mib-2.17.4.3.1.2', 'mib-2.17.4.3.1.1')
                     if port_oid == mac_address.oid:
                         # Check that the port is not in our ignore list
-                        if port.value not in port_ignore_list(device):
+                        if int(port.value) not in port_ignore_list(device):
+                            print(port.value)
                             # Using .replace("b'", "") gets rid of any b char on the end of the mac address string.
                             # this causes us some serious problems...!
                             # Convert the MAC to hexadecimal and a string, and put it into our database.
-                            entry = MACtoPort(device=device, mac_address=bin_to_hex_string(mac_address.value))
+                            entry = MACtoPort(device=device, mac_address=bin_to_hex_string(mac_address.value), port=port.value)
                             entry.save()
+
