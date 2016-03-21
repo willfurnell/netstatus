@@ -276,9 +276,9 @@ def device_info(request, id):
     try:
         device = Device.objects.get(pk=id)
     except ObjectDoesNotExist:
-        return Http404
+        raise Http404
     except ValueError:
-        return Http404
+        raise Http404
 
     ip = device.ipv4_address
 
