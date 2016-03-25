@@ -7,6 +7,7 @@ import binascii
 from subprocess import check_output, CalledProcessError
 import re
 from .models import MACtoPort, IgnoredPort
+import sys
 
 def ping(ip):
     """
@@ -90,7 +91,11 @@ def get_mac_address(ip_address):
     """
     # Opens a new subprocess using the 'ping' command line utility. Pings the specified IP address once.
     try:
-        ping_out = check_output(["/sbin/ping", "-c 1", ip_address])
+        # We have to do this as the ping binary location differs on OSX (Darwin) and Linux
+        if sys.platform == "linux" or sys.platform == "linux2":
+            ping_out = check_output(["/bin/ping", "-c 1", ip_address])
+        elif sys.platform == "darwin":
+            ping_out = check_output(["/sbin/ping", "-c 1", ip_address])
     except CalledProcessError:
         return "ERR_PING_FAIL"
 
