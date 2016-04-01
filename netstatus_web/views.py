@@ -366,6 +366,25 @@ def testing(request):
     #port = out[0].oid.replace("iso.0.8802.1.1.2.1.4.1.1.9.0.", "")
     #port = port[:-2]
 
+
+    session = setup_snmp_session("10.49.86.241")
+
+    port_address_table = session.walk(".1.3.6.1.2.1.17.4.3.1.2")
+
+    def decimal_to_mac(input):
+        input = input.replace("mib-2.17.4.3.1.2.","")
+        parts = input.split(".")
+        parts_hex = []
+        for element in parts:
+            parts_hex.append(format(int(element), "x"))
+
+        mac_address = ''.join(parts_hex)
+
+        return mac_address
+
+    print(decimal_to_mac(port_address_table[0].oid))
+
+
     return HttpResponse("Null")
 
 

@@ -151,7 +151,7 @@ def update_ignored_ports(device_list):
                     entry.save()
 
 
-def update_mac_to_port(device_list):
+def update_mac_to_port_old(device_list):
     """
     Adds entries to the MACtoPort model with a MAC address -> Port relationship, including the device which the port
     belongs to.
@@ -192,4 +192,52 @@ def update_mac_to_port(device_list):
                             # Convert the MAC to hexadecimal and a string, and put it into our database.
                             entry = MACtoPort(device=device, mac_address=bin_to_hex_string(mac_address.value), port=port.value)
                             entry.save()
+
+
+def decimal_to_mac(input):
+    input = input.replace("mib-2.17.4.3.1.2.", "")
+    parts = input.split(".")
+    parts_hex = []
+    for element in parts:
+        parts_hex.append(format(int(element), "x"))
+
+    mac_address = ''.join(parts_hex)
+
+    return mac_address
+
+
+def update_mac_to_port(device_list):
+    """
+    Adds entries to the MACtoPort model with a MAC address -> Port relationship, including the device which the port
+    belongs to.
+
+    The MAC Address Table output will contain the MAC address table for every port on the switch, all in one big list of
+    EasySNMP objects.
+
+    Likewise, the Port Address Table will contain all the ports on the switch, and also contains a decimal
+    representation of the MAC address associated with that port, in a list of EasySNMP objects.
+
+    """
+
+    # Iterate over the device list
+    for device in device_list:
+        # Make sure the device isn't the core switch and is online
+        if device.ipv4_address != "10.49.84.1" and device.online is True:
+
+            # Establish an SNMP session with the device
+            session = setup_snmp_session(device.ipv4_address)
+
+            # OID for dot1dTpFdbAddress (MAC Address table)
+            # http://oid-info.com/get/1.3.6.1.2.1.17.4.3.1.1
+            mac_address_table = session.walk("1.3.6.1.2.1.17.4.3.1.1")
+            # OID for dot1dTpFdbPort (Port table)
+            # http://oid-info.com/get/1.3.6.1.2.1.17.4.3.1.2
+            port_address_table = session.walk(".1.3.6.1.2.1.17.4.3.1.2")
+
+            for port in port_address_table:
+                # Check that the port is not in our ignore list
+                if int(port.value) not in port_ignore_list(device):
+                    # Convert the MAC to hexadecimal and a string, and put it into our database.
+                    entry = MACtoPort(device=device, mac_address=decimal_to_mac(port.oid), port=port.value)
+                    entry.save()
 
