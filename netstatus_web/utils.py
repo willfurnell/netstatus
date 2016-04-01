@@ -26,17 +26,12 @@ def ping(ip):
         return False
 
     try:
+        # Try and get sysDescr.0 from the device. It doesn't matter which element we choose, just that we can actually
+        # get one, as we might be able to establish a connection but not get
         session.get('sysDescr.0')
         return True
     except exceptions.EasySNMPTimeoutError:
         return False
-
-
-def check_connect_failure_return(ip):
-    """
-    A wrapper for the 'ping' function to return that there was a failure connecting to the device to the user
-    """
-    return NotImplemented
 
 
 def timeticks_to_days(timeticks):
@@ -65,21 +60,13 @@ def make_base64_image(image_buffer):
 
     # print(ping('10.49.86.241'))
 
-def sort_log(log, so):
-    """
-    Function used to sort the SNMP log file to order of importance and or date
-    """
-    return NotImplementedError
-
-
-def ip_to_location():
-    pass
-
 
 def bin_to_hex_string(input):
     """
     Gets a binary string from the SNMP data of a switch, which we know is encoded in latin-1 from reading the
-    easysnmp source. Converts this input to raw bytes and then converts to hexadecimal, then converts to a string.
+    easysnmp source.
+
+    Converts this input to raw bytes and then converts to hexadecimal, then converts to a string.
     Returns a hex value of the data, allowing us to get MAC addresses from the switches.
     """
     return binascii.hexlify(bytes(input, 'latin-1')).decode('utf-8')
@@ -99,54 +86,90 @@ def get_mac_address(ip_address):
     except CalledProcessError:
         return "ERR_PING_FAIL"
 
-    # This means the MAC address is now in our arp table, so we can find it.
+    # This means the MAC address is now in our arp table, so we can find it. Opens a new subprocess using the arp
+    # command line utility, passing the IP address as an argument, and gets its output so we can search through it.
     try:
         arp_out = check_output(["/usr/sbin/arp", "-n", ip_address])
     except CalledProcessError:
         return "ERR_ARP_FAIL"
 
-    # Uses a regular expression to search for the MAC address in the ARP ouput.
+    # Uses a regular expression to search for the MAC address in the ARP output.
     mac = re.search("([a-fA-F0-9]{2}:){5}([a-fA-F0-9]{2})", str(arp_out))
 
-    if mac == None:
+    if mac is None:
         return "ERR_MALFORMED_MAC"
 
     # Gets what the regex search found
     mac_to_find = mac.group(0)
 
+    # Replaces colons in the output, as the HP switches used on the network don't use colon delimited MAC addresses in
+    # their output
     mac_to_find = mac_to_find.replace(":", "")
 
     return mac_to_find
 
 
 def port_ignore_list(device):
+    """
+    Returns a list of ports that have already been added to the IgnoredPort model for a specific device.
+    """
+
     port_list = IgnoredPort.objects.all().filter(device=device).values_list('port', flat=True).order_by('port')
     return port_list
 
 
 def update_ignored_ports(device_list):
+    """
+    Adds entries to the IgnoredPort model of uplink and downlink ports on a switch, using the LLDP information.
+
+    The LLDP output will tell us, via the OIDs, which ports on a switch are uplink or downlink ports. These are the
+    ones we want to ignore when searching, as they will likely have a MAC address table containing every device in the
+    school! This isn't very useful as it will show every uplink/downlink port being the location of the device.
+    """
+
+    # Iterate over every device in the device list
     for device in device_list:
+        # Check that it is online, and isn't the core switch
         if device.online is True and device.ipv4_address != "10.49.84.1":
 
+            # Establish an SNMP session
             session = setup_snmp_session(device.ipv4_address)
 
+            # Get a list of the LLDP output via SNMP.
             lldp_output = session.walk("1.0.8802.1.1.2.1.4.1.1.4")
 
+            # Iterate over the elements in the LLDP output
             for i in lldp_output:
-                # The whole OID is returned. Becuase we only want the port, which is a part of the OID, we need to
+                # The whole OID is returned. Becuase we only want the port, which is actually a part of the OID itself, we need to
                 # remove all the preceeding parts of the OID. We also need to remove the last 2
                 # characters as they are integers incrementing per port.
                 # This check makes sure that the port we are using isn't already in the ports to ignore,
                 # and the OID is actually a port.
                 if (i.oid.replace("iso.0.8802.1.1.2.1.4.1.1.4.0.", "")[:-2] not in port_ignore_list(device)) and (i.oid.replace("iso.0.8802.1.1.2.1.4.1.1.4.0.", "")[:-2] != ""):
+                    # Add a new entry to the database containing the device and ignored port relationship, for this port.
                     entry = IgnoredPort(device=device, port=i.oid.replace("iso.0.8802.1.1.2.1.4.1.1.4.0.", "")[:-2])
                     entry.save()
 
 
 def update_mac_to_port(device_list):
+    """
+    Adds entries to the MACtoPort model with a MAC address -> Port relationship, including the device which the port
+    belongs to.
+
+    The MAC Address Table output will contain the MAC address table for every port on the switch, all in one big list of
+    EasySNMP objects.
+
+    Likewise, the Port Address Table will contain all the ports on the switch, and also contains a decimal
+    representation of the MAC address associated with that port, in a list of EasySNMP objects.
+
+    """
+
+    # Iterate over the device list
     for device in device_list:
+        # Make sure the device isn't the core switch and is online
         if device.ipv4_address != "10.49.84.1" and device.online is True:
 
+            # Establish an SNMP session with the device
             session = setup_snmp_session(device.ipv4_address)
 
             # OID for dot1dTpFdbAddress (MAC Address table)
@@ -166,8 +189,6 @@ def update_mac_to_port(device_list):
                         # Check that the port is not in our ignore list
                         if int(port.value) not in port_ignore_list(device):
                             print(port.value)
-                            # Using .replace("b'", "") gets rid of any b char on the end of the mac address string.
-                            # this causes us some serious problems...!
                             # Convert the MAC to hexadecimal and a string, and put it into our database.
                             entry = MACtoPort(device=device, mac_address=bin_to_hex_string(mac_address.value), port=port.value)
                             entry.save()

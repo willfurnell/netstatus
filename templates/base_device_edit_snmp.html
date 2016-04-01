@@ -13,9 +13,9 @@
     {% csrf_token %}
 
         <ul>
-            <li>Name (from device): <input type="text" name="sysName" value="{{ system_information.sysName }}"></li>
-            <li>Location (from device): <input type="text" name="sysLocation" value="{{ system_information.sysLocation }}" /></li>
-            <li>Contact: <input type="text" name="sysContact" value="{{ system_information.sysContact }}"></li>
+            <li>Name (from device): <input type="text" name="sysName" value="{{ sysName }}"></li>
+            <li>Location (from device): <input type="text" name="sysLocation" value="{{ sysLocation }}" /></li>
+            <li>Contact: <input type="text" name="sysContact" value="{{ sysContact }}"></li>
         </ul>
 
         <input type="submit" value="Edit device attributes">
