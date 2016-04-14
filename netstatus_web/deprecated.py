@@ -61,3 +61,42 @@ def bin_to_hex_string(input):
     Returns a hex value of the data, allowing us to get MAC addresses from the switches.
     """
     return binascii.hexlify(bytes(input, 'latin-1')).decode('utf-8')
+
+
+def testing(request):
+
+    # if the sysname from the output matches one that is already in our database, then we can assume it is an uplink or
+    # downlink to another switch. If it isn't in the database, then we can assume the device is an IP phone or something
+    # and we'll treat it as an end device and ignore it being shown as a switch as this will get really complicated
+    # otherwise
+
+    # if there is more than one sysname AND its not a phone, then the switch is NOT a total end device, but could be
+    # providing services to some end devices. Then we just ignore both ports!
+
+    #oid = out[0].oid
+
+    #port = oid[:-2]
+
+    #port = out[0].oid.replace("iso.0.8802.1.1.2.1.4.1.1.9.0.", "")
+    #port = port[:-2]
+
+
+    session = setup_snmp_session("10.49.86.241")
+
+    port_address_table = session.walk(".1.3.6.1.2.1.17.4.3.1.2")
+
+    def decimal_to_mac(input):
+        input = input.replace("mib-2.17.4.3.1.2.","")
+        parts = input.split(".")
+        parts_hex = []
+        for element in parts:
+            parts_hex.append(format(int(element), "x"))
+
+        mac_address = ''.join(parts_hex)
+
+        return mac_address
+
+    print(decimal_to_mac(port_address_table[0].oid))
+
+
+    return HttpResponse("Null")
