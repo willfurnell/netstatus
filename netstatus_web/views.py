@@ -494,13 +494,22 @@ def search(request):
             # Get the first result from the database in the MACtoPort table corresponding with the MAC address of the
             # device the user entered.
             mac_to_port_info = MACtoPort.objects.all().filter(mac_address__exact=mac_to_find).first()
-            # Get the corresponding switch attributes from the database, this is so we can tell the user the switch
-            # and which port the device is connected to.
-            device = Device.objects.get(id=mac_to_port_info.device_id)
 
-            pagevars = {'title': "Device search results", 'device': device, 'mac_to_port_info': mac_to_port_info}
+            if mac_to_port_info is not None:
+                # Get the corresponding switch attributes from the database, this is so we can tell the user the switch
+                # and which port the device is connected to.
+                device = Device.objects.get(id=mac_to_port_info.device_id)
 
-            return render(request, "base_search_result.html", pagevars)
+                pagevars = {'title': "Device search results", 'device': device, 'mac_to_port_info': mac_to_port_info}
+
+                return render(request, "base_search_result.html", pagevars)
+            else:
+                # Sometimes mac_to_port_info will return None when nothing is found, so this fixes that issue and
+                # tells the user that no results have been found
+                pagevars = {'title': "Device search returned no results"}
+
+                return render(request, "base_search_noresult.html", pagevars)
+
 
         except ObjectDoesNotExist:
             # The MAC address could not be found in the database - so the device could have been added recently,
