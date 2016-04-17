@@ -124,3 +124,7 @@ STATICFILES_DIRS = [
 # https://docs.djangoproject.com/en/1.9/howto/static-files/
 
 STATIC_URL = '/static/'
+
+SNMP_COMMUNITY_R = "***REMOVED***"
+
+SNMP_COMMUNITY_RW = "***REMOVED***"
