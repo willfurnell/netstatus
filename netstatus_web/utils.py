@@ -9,6 +9,8 @@ import re
 from .models import MACtoPort, IgnoredPort
 import sys
 
+from netstatus.settings import SNMP_COMMUNITY_R, SNMP_COMMUNITY_RW
+
 def ping(ip):
     """
     'Pings' a specified IP address to check if it is online or not.
@@ -21,7 +23,7 @@ def ping(ip):
     try:
         # The low timeout value is to decrease page loading time, as this is mainly for quickly checking
         # device status. We don't NEED to make a connection.
-        session = Session(hostname=ip, community='***REMOVED***', version=2, timeout=0.1)
+        session = Session(hostname=ip, community=SNMP_COMMUNITY_R, version=2, timeout=0.1)
     except (exceptions.EasySNMPTimeoutError, exceptions.EasySNMPConnectionError):
         return False
 
@@ -45,7 +47,7 @@ def setup_snmp_session(ip):
     """
     Sets up an SNMP session with a device and returns this session.
     """
-    session = Session(hostname=ip, community='***REMOVED***', version=2, timeout=2)
+    session = Session(hostname=ip, community=SNMP_COMMUNITY_RW, version=2, timeout=2)
     return session
 
 
